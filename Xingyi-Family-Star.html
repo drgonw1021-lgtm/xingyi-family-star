@@ -1,0 +1,3589 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星裔 · 家族星图</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%2306070B'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23F2D9A8'/%3E%3Ccircle cx='16' cy='16' r='6.5' fill='none' stroke='%23D9A75E' stroke-width='1'/%3E%3Ccircle cx='6' cy='9' r='1.6' fill='%23D9A75E'/%3E%3Ccircle cx='25' cy='11' r='1.6' fill='%237E92CC'/%3E%3Ccircle cx='24' cy='24' r='1.4' fill='%23D9A75E'/%3E%3C/svg%3E">
+<style>
+/* ============ tokens ============ */
+:root{
+  --void:#06070B;
+  --ink:#0D1016;
+  --ink2:#141922;
+  --line:#242A35;
+  --bone:#EDE6D8;
+  --bone-dim:#A9A99F;
+  --dim:#6A6F7B;
+  --gold:#D9A75E;
+  --gold-hi:#F2D9A8;
+  --indigo:#7E92CC;
+  --danger:#C0703F;
+
+  --r-l:16px;
+  --r-m:10px;
+  --r-s:6px;
+
+  --pad:16px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+
+  --f-display:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;}
+body{
+  background:var(--void);color:var(--bone);
+  font-family:var(--f-body);
+  font-size:14px;line-height:1.6;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+input,textarea,select{font-family:inherit;font-size:16px;}
+::selection{background:rgba(217,167,94,.3);}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+
+#app{position:fixed;inset:0;}
+
+/* ============ sky ============ */
+#sky{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;}
+#sky.dragging{cursor:grabbing;}
+
+/* ============ hud ============ */
+.hud{
+  position:absolute;top:0;left:0;right:0;
+  padding:calc(var(--pad) + env(safe-area-inset-top,0px)) var(--pad) 12px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(6,7,11,.92) 0%,rgba(6,7,11,.55) 55%,rgba(6,7,11,0) 100%);
+  padding-bottom:34px;
+}
+.brand{display:flex;align-items:center;gap:10px;pointer-events:auto;min-width:0;}
+.mark{width:26px;height:26px;flex:none;opacity:.9;}
+.fam-name{
+  font-family:var(--f-display);font-size:21px;letter-spacing:.04em;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw;
+}
+.fam-sub{font-size:11.5px;color:var(--dim);letter-spacing:.06em;margin-top:3px;white-space:nowrap;}
+.fam-sub b{color:var(--gold);font-weight:600;font-variant-numeric:tabular-nums;}
+
+.hud-right{display:flex;gap:8px;pointer-events:auto;}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(13,16,22,.72);
+  display:grid;place-items:center;color:var(--bone-dim);
+  transition:border-color .18s,color .18s;
+}
+.icon-btn:hover{border-color:var(--gold-lo,#8C6A38);color:var(--gold);}
+
+/* ============ timeline ============ */
+.timeline{
+  position:absolute;left:0;right:0;bottom:calc(96px + var(--safe-b));
+  display:flex;align-items:center;gap:14px;
+  padding:0 22px;
+  opacity:0;transform:translateY(6px);pointer-events:none;
+  transition:opacity .25s,transform .25s;
+}
+.timeline.on{opacity:1;transform:none;pointer-events:auto;}
+.tl-year{
+  font-family:var(--f-display);font-size:17px;color:var(--gold);flex:none;
+  font-variant-numeric:tabular-nums;min-width:56px;
+}
+.tl-track{flex:1;position:relative;height:26px;display:flex;align-items:center;}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:26px;background:none;margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:linear-gradient(90deg,var(--gold) 0%,var(--gold) var(--fill,50%),#2A3040 var(--fill,50%),#2A3040 100%);}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--gold-hi);margin-top:-6.5px;border:0;
+  box-shadow:0 0 12px rgba(242,217,168,.55);
+}
+input[type=range]::-moz-range-track{height:1px;background:#2A3040;}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--gold-hi);}
+
+/* ============ dock ============ */
+.dock{
+  position:absolute;left:0;right:0;bottom:0;
+  padding:10px var(--pad) calc(14px + var(--safe-b));
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(0deg,rgba(6,7,11,.96) 22%,rgba(6,7,11,0) 100%);
+  padding-top:30px;
+}
+.dock-btn{
+  min-width:84px;height:44px;padding:0 16px;border-radius:var(--r-m);
+  border:1px solid var(--line);background:rgba(20,25,34,.78);
+  font-size:13.5px;color:var(--bone-dim);letter-spacing:.06em;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  transition:border-color .18s,color .18s,background .18s;
+}
+.dock-btn:hover{border-color:#3A4150;color:var(--bone);}
+.dock-btn.primary{
+  background:linear-gradient(180deg,#1E2531,#141922);
+  border-color:#4A3B26;color:var(--gold-hi);min-width:104px;
+}
+.dock-btn.primary:hover{border-color:var(--gold);background:#20262F;}
+
+/* ============ person card ============ */
+.card{
+  position:absolute;left:var(--pad);right:var(--pad);
+  bottom:calc(96px + var(--safe-b));
+  max-height:56vh;
+  background:var(--ink);
+  border:1px solid var(--line);border-radius:var(--r-l);
+  padding:16px 16px 14px;
+  transform:translateY(14px);opacity:0;pointer-events:none;
+  transition:opacity .22s,transform .28s cubic-bezier(.22,1,.36,1);
+  overflow:auto;overscroll-behavior:contain;
+}
+.card.on{opacity:1;transform:none;pointer-events:auto;}
+.card-top{display:flex;gap:14px;align-items:flex-start;}
+.avatar{
+  width:56px;height:56px;border-radius:50%;flex:none;
+  border:1px solid var(--line);
+  background:radial-gradient(circle at 35% 30%,#20262F,#0D1016);
+  display:grid;place-items:center;
+  font-family:var(--f-display);font-size:22px;color:var(--gold);
+  overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+.card-name{font-family:var(--f-display);font-size:24px;line-height:1.25;letter-spacing:.03em;}
+.card-meta{font-size:12px;color:var(--dim);margin-top:5px;font-variant-numeric:tabular-nums;}
+.card-path{
+  margin-top:12px;padding:10px 12px;border-radius:var(--r-m);
+  background:#0A0D12;border:1px solid #1B212B;
+  font-size:12.5px;color:var(--bone-dim);line-height:1.7;
+}
+.card-path .k{color:var(--dim);font-size:11.5px;letter-spacing:.08em;display:block;margin-bottom:3px;}
+.card-note{margin-top:12px;font-size:13px;color:var(--bone-dim);line-height:1.75;}
+.card-dup{margin-top:12px;padding:11px 13px;border-radius:var(--r-m);background:rgba(217,167,94,.06);border:1px solid rgba(217,167,94,.18);}
+.dup-title{font-size:11.5px;color:rgba(217,167,94,.72);letter-spacing:.06em;margin-bottom:8px;}
+.dup-row{display:flex;align-items:center;gap:10px;padding:4px 0;}
+.dup-name{font-size:13px;color:var(--bone);}
+.dup-why{flex:1;font-size:11.5px;color:var(--dim);}
+.dup-go{
+  height:28px;padding:0 12px;border-radius:999px;cursor:pointer;
+  background:transparent;border:1px solid rgba(217,167,94,.35);color:var(--gold);
+  font:inherit;font-size:12px;transition:background .18s,border-color .18s;
+}
+.dup-go:hover{background:rgba(217,167,94,.12);border-color:rgba(217,167,94,.55);}
+.card-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+.mini{
+  height:36px;padding:0 13px;border-radius:var(--r-s);
+  border:1px solid var(--line);background:#12171F;color:var(--bone-dim);
+  font-size:12.5px;display:inline-flex;align-items:center;gap:6px;
+}
+.mini:hover{border-color:#3A4150;color:var(--bone);}
+.mini.gold{border-color:#43361F;color:var(--gold);}
+.mini.gold:hover{border-color:var(--gold);}
+.card-close{position:absolute;top:10px;right:10px;width:32px;height:32px;display:grid;place-items:center;color:var(--dim);}
+.card-close:hover{color:var(--bone);}
+
+/* ============ modal ============ */
+.mask{
+  position:absolute;inset:0;background:rgba(3,4,6,.72);
+  opacity:0;pointer-events:none;transition:opacity .22s;
+  display:flex;align-items:flex-end;justify-content:center;
+  z-index:120;
+}
+.mask.on{opacity:1;pointer-events:auto;}
+.sheet{
+  width:100%;max-width:560px;max-height:88%;
+  background:var(--ink);border:1px solid var(--line);
+  border-radius:var(--r-l) var(--r-l) 0 0;
+  transform:translateY(24px);transition:transform .3s cubic-bezier(.22,1,.36,1);
+  display:flex;flex-direction:column;min-height:0;
+}
+.mask.on .sheet{transform:none;}
+.sheet-head{padding:18px 20px 12px;border-bottom:1px solid #1A1F28;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.sheet-title{font-family:var(--f-display);font-size:19px;letter-spacing:.04em;}
+.sheet-desc{font-size:12.5px;color:var(--dim);margin-top:4px;line-height:1.6;}
+.sheet-body{padding:16px 20px 8px;overflow:auto;overscroll-behavior:contain;}
+.sheet-foot{padding:12px 20px calc(16px + var(--safe-b));border-top:1px solid #1A1F28;display:flex;gap:10px;}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11.5px;letter-spacing:.1em;color:var(--dim);margin-bottom:6px;}
+.field input,.field textarea,.field select{
+  width:100%;padding:11px 12px;border-radius:var(--r-m);
+  background:#0A0D12;border:1px solid var(--line);color:var(--bone);
+  outline:none;font-size:16px;transition:border-color .16s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#5A4628;}
+.field textarea{min-height:72px;resize:vertical;font-size:15px;}
+.field-row{display:flex;gap:10px;}
+.field-row>*{flex:1;min-width:0;}
+.hint{font-size:11.5px;color:#565B66;margin-top:6px;line-height:1.6;}
+
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;}
+.seg button{flex:1;height:42px;font-size:13px;color:var(--dim);background:#0A0D12;border-right:1px solid var(--line);}
+.seg button:last-child{border-right:0;}
+.seg button.on{background:#1B2029;color:var(--gold-hi);}
+
+.btn{
+  height:46px;padding:0 20px;border-radius:var(--r-m);font-size:14px;
+  border:1px solid var(--line);background:#141922;color:var(--bone-dim);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn.gold{background:linear-gradient(180deg,#2A2013,#1C160E);border-color:#5C4726;color:var(--gold-hi);}
+.btn.gold:hover{border-color:var(--gold);}
+.btn:hover{border-color:#3A4150;color:var(--bone);}
+.btn.wide{flex:1;}
+
+.list{display:flex;flex-direction:column;gap:8px;}
+.row{
+  display:flex;align-items:center;gap:12px;padding:12px 12px;
+  border:1px solid #1A1F28;border-radius:var(--r-m);background:#0A0D12;
+  transition:border-color .16s,background .16s;
+}
+.row:hover{border-color:#333B49;background:#10151C;}
+.row-main{flex:1;min-width:0;}
+.row-title{font-size:14px;color:var(--bone);display:flex;align-items:center;gap:8px;}
+.row-sub{font-size:11.5px;color:var(--dim);margin-top:3px;font-variant-numeric:tabular-nums;}
+.dotmark{width:8px;height:8px;border-radius:50%;flex:none;}
+
+.empty{padding:28px 8px;text-align:center;color:var(--dim);font-size:13px;line-height:1.9;}
+.empty b{display:block;color:var(--bone);font-family:var(--f-display);font-size:17px;margin-bottom:6px;letter-spacing:.05em;}
+
+/* ============ toast ============ */
+.toast{
+  position:absolute;left:50%;bottom:calc(160px + var(--safe-b));
+  transform:translate(-50%,8px);opacity:0;pointer-events:none;
+  background:#1B2029;border:1px solid #333B49;border-radius:var(--r-m);
+  padding:10px 16px;font-size:13px;color:var(--bone);
+  max-width:82vw;text-align:center;z-index:130;
+  transition:opacity .2s,transform .2s;
+}
+.toast.on{opacity:1;transform:translate(-50%,0);}
+
+/* ============ 连线提示 ============ */
+#edgeTip{position:fixed;z-index:40;max-width:236px;padding:9px 11px;border-radius:9px;background:#0B1015;border:1px solid #232B36;color:#EDE6D8;font-size:12px;line-height:1.5;opacity:0;transform:translateY(-3px);transition:opacity .14s ease,transform .14s ease;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+#edgeTip.on{opacity:1;transform:none}
+#edgeTip b{display:block;color:#F2D9A8;font-weight:600;font-family:var(--f-display);letter-spacing:.02em}
+#edgeTip span{display:block;margin-top:4px;color:#84878F;font-size:11.5px}
+
+/* ============ legend ============ */
+.legend{
+  position:absolute;right:var(--pad);top:calc(74px + env(safe-area-inset-top,0px));
+  width:186px;background:rgba(13,16,22,.9);border:1px solid #1A1F28;
+  border-radius:var(--r-m);padding:12px 14px;font-size:11.5px;color:var(--bone-dim);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .2s,transform .2s;
+  z-index:40;
+}
+.legend.on{opacity:1;transform:none;pointer-events:auto;}
+.legend i{display:inline-block;width:20px;height:1px;vertical-align:middle;margin-right:8px;}
+.legend .row2{display:flex;align-items:center;padding:4px 0;}
+.legend .ring{width:9px;height:9px;border:1px solid var(--gold);border-radius:50%;display:inline-block;margin-right:8px;}
+.legend .hollow{border-color:#4A505C;}
+
+/* ============ onboarding ============ */
+.onboard{
+  position:absolute;inset:0;z-index:100;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 22px calc(4px + var(--safe-b));
+  background:
+    radial-gradient(120% 80% at 50% 12%,rgba(35,28,18,.55) 0%,rgba(6,7,11,0) 60%),
+    var(--void);
+  transition:opacity .45s;
+}
+.onboard.out{opacity:0;pointer-events:none;}
+.ob-eyebrow{
+  font-size:11px;letter-spacing:.34em;color:var(--gold);opacity:.8;
+  font-family:var(--f-body);
+}
+.ob-title{
+  font-family:var(--f-display);font-size:46px;line-height:1.1;letter-spacing:.08em;
+  margin:10px 0 0;color:var(--bone);
+  text-wrap:balance;
+}
+.ob-title span{color:var(--gold);}
+.ob-lead{font-size:14px;color:var(--bone-dim);line-height:1.9;margin:16px 0 0;max-width:34em;}
+.ob-lead em{color:var(--bone);font-style:normal;}
+.ob-acts{display:flex;flex-direction:column;gap:10px;margin-top:30px;}
+.ob-acts .btn{height:52px;font-size:15px;}
+.ob-note{font-size:11.5px;color:#565B66;margin-top:14px;line-height:1.7;}
+
+/* ============ desktop ============ */
+@media (min-width:768px){
+  :root{--pad:26px;}
+  .hud{padding-bottom:44px;}
+  .fam-name{font-size:26px;max-width:none;}
+  .card{
+    left:var(--pad);right:auto;width:392px;
+    bottom:calc(104px + var(--safe-b));max-height:64vh;
+  }
+  .timeline{left:var(--pad);right:auto;width:420px;padding:0;}
+  .dock{justify-content:flex-start;padding-left:var(--pad);gap:12px;}
+  .mask{align-items:center;padding:24px;}
+  .sheet{border-radius:var(--r-l);max-height:82%;}
+  .onboard{padding:0 8vw 6vh;justify-content:center;max-width:760px;margin:0 auto;left:50%;transform:translateX(-50%);right:auto;width:100%;}
+  .ob-title{font-size:62px;}
+  .ob-lead{font-size:15px;}
+  .ob-acts{flex-direction:row;max-width:520px;}
+  .legend{width:200px;}
+}
+@media (max-width:400px){
+  .ob-title{font-size:40px;}
+  .fam-name{font-size:19px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;transition-duration:.001ms !important;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="sky" aria-label="家族星图"></canvas>
+  <div id="edgeTip"></div>
+
+  <header class="hud">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="3" fill="#F2D9A8"/>
+        <circle cx="16" cy="16" r="7" fill="none" stroke="#D9A75E" stroke-width="1" opacity=".85"/>
+        <circle cx="6" cy="9" r="1.7" fill="#D9A75E"/>
+        <circle cx="25" cy="11" r="1.7" fill="#7E92CC"/>
+        <circle cx="24" cy="24" r="1.5" fill="#D9A75E"/>
+        <path d="M16 16 L6 9 M16 16 L25 11 M16 16 L24 24" stroke="#8C6A38" stroke-width=".9" opacity=".8"/>
+      </svg>
+      <div>
+        <div class="fam-name" id="famName">张家</div>
+        <div class="fam-sub" id="famSub">12 颗星 · 已点亮 8</div>
+        <div style="display:flex;gap:6px;margin-top:7px">
+          <button id="btnViewer" style="padding:3px 9px;border-radius:999px;border:1px solid rgba(217,167,94,.32);background:rgba(217,167,94,.07);color:#D9A75E;font:inherit;font-size:11px;letter-spacing:.02em;cursor:pointer">视角 · 我</button>
+          <button id="btnLayout" style="padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#9E9C93;font:inherit;font-size:11px;cursor:pointer">辐射</button>
+        </div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <button class="icon-btn" id="btnClock" aria-label="时间轴">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>
+      </button>
+      <button class="icon-btn" id="btnLegend" aria-label="图例">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+      </button>
+      <button class="icon-btn" id="btnMore" aria-label="更多">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="legend" id="legend">
+    <div class="row2"><i style="background:var(--gold)"></i>血缘</div>
+    <div class="row2"><i style="background:var(--indigo)"></i>姻亲</div>
+    <div class="row2"><span class="ring"></span>婚姻枢纽</div>
+    <div class="row2"><span class="ring hollow"></span>待认领的暗星</div>
+    <div class="row2" style="color:var(--dim);border-top:1px solid #1A1F28;margin-top:6px;padding-top:8px;">亮度＝资料完整度</div>
+  </div>
+
+  <div class="timeline" id="timeline">
+    <span class="tl-year" id="tlYear">2026</span>
+    <div class="tl-track"><input type="range" id="yearRange" min="1900" max="2026" value="2026"></div>
+  </div>
+
+  <aside class="card" id="card" aria-live="polite"></aside>
+
+  <nav class="dock">
+    <button class="dock-btn" id="btnFamilies">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="9" r="2.4"/><circle cx="17" cy="9" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M7 9 12 17M17 9 12 17"/></svg>
+      家族
+    </button>
+    <button class="dock-btn primary" id="btnAdd">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+      添加
+    </button>
+    <button class="dock-btn" id="btnInvite">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="8.5" r="1.8"/><path d="M12 12v6"/></svg>
+      邀请
+    </button>
+  </nav>
+
+  <div class="mask" id="mask"><div class="sheet" id="sheet"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <div class="onboard" id="onboard">
+    <div class="ob-eyebrow">星 裔</div>
+    <h1 class="ob-title">一个家族<br><span>就是一片宇宙</span></h1>
+    <p class="ob-lead">每个人是一颗星，一次婚姻把两片星云接起来。<br>你只要先点亮自己，剩下的星星，家人会一颗一颗补上。</p>
+    <div class="ob-acts">
+      <button class="btn gold" id="obCreate">建立我的家族</button>
+      <button class="btn" id="obDemo">先看看示例家族</button>
+    </div>
+    <p class="ob-note">数据先存在这台设备上；连上家族宇宙后，家人才看得到同一片星图。</p>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Part 2 · 数据模型 / 关系计算 / 布局
+   ============================================================ */
+'use strict';
+
+/* ============================================================
+   Part 0 · 多语种 / i18n
+   中文是母版；英文是完整映射，切换后整页重排一次称谓与文案。
+   ============================================================ */
+const LANG_KEY = 'xingyi.lang';
+let LANG = (function(){
+  try{
+    const v = localStorage.getItem(LANG_KEY);
+    if(v === 'zh' || v === 'en') return v;
+  }catch(e){}
+  const nav = (navigator.language || 'zh').toLowerCase();
+  return nav.indexOf('zh') === 0 ? 'zh' : 'en';
+})();
+
+/* ---------- 英文称谓：同一套谱系算法，换一种语言渲染 ---------- */
+function _sibEN(from, to){
+  const f = _isF(to);
+  const older = _older(to, from);
+  if(older === true)  return f ? 'elder sister' : 'elder brother';
+  if(older === false) return f ? 'younger sister' : 'younger brother';
+  return f ? 'sister' : 'brother';
+}
+function _byGenEN(from, to, fc, tc, up, down){
+  const f = _isF(to);
+  const kid = f ? 'daughter' : 'son';
+  if(down === 0){
+    if(up === 1) return f ? 'mother' : 'father';
+    const pat = !_isF(fc[1]);
+    if(up === 2) return (pat ? 'paternal ' : 'maternal ') + (f ? 'grandmother' : 'grandfather');
+    if(up === 3) return (pat ? 'paternal ' : 'maternal ') + 'great-' + (f ? 'grandmother' : 'grandfather');
+    return (pat ? 'paternal ' : 'maternal ') + 'great-great-' + (f ? 'grandmother' : 'grandfather');
+  }
+  if(up === 0){
+    if(down === 1) return kid;
+    if(down === 2) return f ? 'granddaughter' : 'grandson';
+    if(down === 3) return 'great-' + (f ? 'granddaughter' : 'grandson');
+    return 'descendant (' + (down - 1) + ' gen)';
+  }
+  const pat = !_isF(fc[1]);
+  if(up === 1 && down === 1) return _sibEN(from, to);
+  if(up === 1 && down === 2) return f ? 'niece' : 'nephew';
+  if(up === 2 && down === 1){
+    if(pat) return f ? 'aunt' : (_older(to, fc[1]) === true ? 'elder uncle' : 'uncle');
+    return f ? 'aunt' : 'uncle';
+  }
+  if(up === 2 && down === 2) return (pat ? 'paternal ' : 'maternal ') + 'cousin';
+  if(up === 2 && down === 3) return "cousin's " + kid;
+  if(up === 3 && down === 1) return pat ? (f ? 'great-aunt' : 'great-uncle') : (f ? 'great-aunt' : 'great-uncle');
+  if(up === 3 && down === 2) return 'first cousin once removed';
+  if(up === down) return 'distant cousin (' + (up - 1) + ' gen)';
+  return 'distant kin (' + Math.min(up, down) + ' gen)';
+}
+function _kinBloodEN(from, to){
+  if(from === to) return 'self';
+  const A = _ancDist(to);
+  const q = [[from, [from]]], seen = { [from]: 1 };
+  while(q.length){
+    const [cur, chain] = q.shift();
+    if(A[cur] !== undefined){
+      const up = chain.length - 1, down = A[cur];
+      const tc = _pathUp(to, cur) || [cur];
+      return _byGenEN(from, to, chain, tc, up, down);
+    }
+    _pOf(cur).forEach(p => { if(!seen[p]){ seen[p] = 1; q.push([p, chain.concat([p])]); } });
+  }
+  return null;
+}
+function _spouseTermEN(fromId, partner, toId, bt){
+  const f = _isF(toId);
+  if(bt === 'self') return 'spouse';
+  if(/brother|sister/.test(bt)) return f ? 'sister-in-law' : 'brother-in-law';
+  if(bt === 'son' || bt === 'daughter') return f ? 'daughter-in-law' : 'son-in-law';
+  if(bt === 'father' || bt === 'mother') return f ? 'stepmother' : 'stepfather';
+  return 'spouse of ' + bt;
+}
+function _inLawEN(fromId, spouseId, toId, bt){
+  if(bt === 'father' || bt === 'mother') return (bt === 'father' ? 'father' : 'mother') + '-in-law';
+  if(/brother|sister/.test(bt)) return "spouse's " + bt;
+  if(bt === 'son' || bt === 'daughter') return bt === 'son' ? 'stepson' : 'stepdaughter';
+  return "spouse's " + bt;
+}
+function kinTermEN(fromId, toId){
+  if(!fromId || !toId) return '';
+  if(fromId === toId) return 'self';
+  const blood = _kinBloodEN(fromId, toId);
+  if(blood) return blood;
+  const tsp = S.unions.filter(u => u.a === toId || u.b === toId).map(u => (u.a === toId ? u.b : u.a));
+  for(let i = 0; i < tsp.length; i++){
+    const t = _kinBloodEN(fromId, tsp[i]);
+    if(t) return _spouseTermEN(fromId, tsp[i], toId, t);
+  }
+  const fsp = S.unions.filter(u => u.a === fromId || u.b === fromId).map(u => (u.a === fromId ? u.b : u.a));
+  for(let i = 0; i < fsp.length; i++){
+    const t = _kinBloodEN(fsp[i], toId);
+    if(t) return _inLawEN(fromId, fsp[i], toId, t);
+    const tsp2 = S.unions.filter(u => u.a === toId || u.b === toId).map(u => (u.a === toId ? u.b : u.a));
+    for(let j = 0; j < tsp2.length; j++){
+      const t2 = _kinBloodEN(fsp[i], tsp2[j]);
+      if(t2) return _spouseTermEN(fromId, tsp2[j], toId, t2);
+    }
+  }
+  return 'distant relative';
+}
+function kinTermL(fromId, toId){
+  return LANG === 'en' ? kinTermEN(fromId, toId) : kinTerm(fromId, toId);
+}
+
+/* ---------- 英文文案表 ---------- */
+const EN_EXACT = {
+  '血缘':'Blood', '姻亲':'In-law', '婚姻枢纽':'Marriage', '待认领的暗星':'Unclaimed star',
+  '亮度＝资料完整度':'Brightness = profile completeness',
+  '家族':'Family', '添加':'Add', '邀请':'Invite', '我':'Me',
+  '建立我的家族':'Create my family', '先看看示例家族':'Look at a sample family',
+  '姓名':'Name', '性别':'Gender', '男':'Male', '女':'Female', '出生年':'Birth year',
+  '离世年':'Year of passing', '一句话':'One line', '谁能看见':'Who can see it',
+  '家族可见':'Family', '仅血缘':'Bloodline only', '仅本人':'Only me',
+  '只填一个名字也可以':'Just a name is enough', '如 1958':'e.g. 1958',
+  '留空表示在世':'Leave empty if still living',
+  '他做过什么、爱吃什么、你最记得他哪件事':'What they did, what they loved, what you remember most',
+  '补充资料':'Edit profile', '把 TA 邀请进来':'Invite them', '以 TA 为中心':'Center on them',
+  '回到我的视角':'Back to my view', '访客视角':'Guest view',
+  '这个视角的中心':'center of this view', '不对外公开':'not shared', '生卒未补':'years unknown',
+  '已认领':'Claimed', '待认领':'Unclaimed', '关系路径':'Relationship path',
+  '合并':'Merge', '取消':'Cancel', '关闭':'Close', '保存':'Save', '下一步':'Next',
+  '不知道':'Not sure', '就是我':'That is me', '不是我':'Not me', '先看看':'Just looking',
+  '开始':'Start', '再想想':'Not now', '确定':'OK', '记住了':'Got it', '复制':'Copy',
+  '粘贴':'Paste', '上传':'Upload', '取回':'Pull', '导出':'Export', '选择':'Choose',
+  '清空':'Reset', '查看':'View', '处理':'Open', '解绑':'Unlink', '加入':'Join',
+  '创建':'Create', '生成':'Generate', '管理':'Manage', '开启':'Turn on', '退出':'Leave',
+  '切换':'Switch', '当前':'Current', '跳过':'Skip',
+  '同名':'Same name', '同一个配偶':'Same spouse', '同一对父母':'Same parents',
+  '图上可能是同一颗星，点一下就合并':'Looks like the same person — one tap to merge',
+  '添加父亲':'Add father', '添加母亲':'Add mother', '添加配偶':'Add spouse',
+  '添加子女':'Add child', '添加兄弟姐妹':'Add sibling',
+  '族谱':'Tree', '辐射':'Radial',
+  '父亲':'Father', '母亲':'Mother', '配偶':'Spouse', '子女':'Child', '兄弟姐妹':'Sibling',
+  '家族名':'Family name', '你的名字':'Your name', '名字':'Name',
+  '家族名叫什么？':'Name of the family',
+  '填一个名字就能先挂上去。生卒、照片、一句话都可以以后由家人补。':
+    'A name is enough to place them. Dates, photos and a line about them can come later.',
+  '手机号、住址、病史这类字段不进默认字段集，只能本人认领后自己开。':
+    'Phone numbers, addresses and medical details are never in the default form; only the person themselves can add them after claiming.',
+  '这一份只保存在本机，不会自动同步给别人。':'This copy stays on this machine and is not pushed to anyone.',
+  /* ---- 首屏 ---- */
+  '一个家族':'One family', '就是一片宇宙':'is a universe',
+  '每个人是一颗星，一次婚姻把两片星云接起来。':'Every person is a star; a marriage joins two nebulae.',
+  '你只要先点亮自己，剩下的星星，家人会一颗一颗补上。':'Light yourself first — your family will fill in the rest, one star at a time.',
+  '数据先存在这台设备上；连上家族宇宙后，家人才看得到同一片星图。':'Data stays on this device. Once you join a family universe, your family sees the same map.',
+  /* ---- 添加关系 ---- */
+  '他属于你父母那一支。只需一个名字就能先挂上去。':'They belong to your parents\u2019 line. A name is all it takes to place them.',
+  '她来自另一个家族——她的那一支会是图上另一个分支。':'She comes from another family — her line becomes another branch of the map.',
+  '婚姻会成为图上的一个枢纽节点，也是连接两个家族的接口。':'A marriage becomes a hub node, and the joint between two families.',
+  '孩子挂在父母的婚姻枢纽下面，父系母系天然等权。':'Children hang below the marriage hub; both sides weigh the same.',
+  '同父母，但各自会有自己的分支。':'Same parents, each with their own branch.',
+  '添加一位家人':'Add a family member',
+  '先挂在这一代，之后再补关系也可以。':'Start on this generation; wire the relation later.',
+  '至少填一个名字':'At least give a name',
+  'TA 已经在这个位置上。是同一个人吗？':'They are already in that spot. Same person?',
+  '是同一个人的话，点左边直接去补 TA 的资料，不用再加一颗星。':'If it is the same person, go straight to their profile instead of adding a star.',
+  '不是，另加一颗':'No, add another', '是同一人':'Yes, same person',
+  '资料越全，这颗星越亮。填不出来的空着就行。':'The fuller the profile, the brighter the star. Leave blank what you do not know.',
+  /* ---- 视角 / 星卡 ---- */
+  '换个视角看':'Change the viewpoint',
+  '称呼是相对的。以谁为中心，整张网就按谁的眼睛重排一次。':'Terms are relative. Center on someone and the whole web re-arranges around their eyes.',
+  '被分享的人打开时，会以自己的身份为中心——同一张图，两套叫法。':'An invited person opens it as their own center — one map, two sets of names.',
+  '回到我自己':'Back to me',
+  '这颗星已经有人了':'This star is already claimed',
+  '确认是你':'Confirm this is you',
+  '名字可以改。认领之后，这颗星就归你，别人改不动。':'The name can change. Once claimed, this star is yours and others cannot edit it.',
+  '可留空':'optional', '只问这一句，别的以后慢慢补。':'Just this one question; fill the rest later.',
+  '你父亲叫什么？':'What is your father\u2019s name?',
+  '这不是表单，只是一个问题。知道多少填多少。':'Not a form, just a question. Answer as much as you know.',
+  '姓 + 名':'Family name + given name',
+  '这一颗填上去是暗的——要等他本人来认领才会亮。':'Star goes in dark — it lights only when that person claims it.',
+  '就是他':'That is them',
+  '这一支已经全亮了':'This branch is fully lit',
+  '（我）':' (me)',
+  /* ---- 家族 / 联姻 ---- */
+  '一个家族是一片星域。两个家族因为一场婚姻接壤，就连成了同一个宇宙。':'A family is a star field. Two families joined by a marriage share a border and become one universe.',
+  '家族之间的桥':'Bridges between families',
+  '软链接只是握了手：两边看得见桥，看不见对方的人。双方各点一次头，才合并成同一张网。':'A soft link is only a handshake: both see the bridge, neither sees the other\u2019s people. One nod from each side merges them into one map.',
+  '关联另一个家族':'Link another family',
+  '还没有。一场联姻会让两片星域接壤。':'None yet. A marriage makes two star fields touch.',
+  '两个家族之间的桥':'The bridge between two families',
+  '已经合并：两个人是同一条记录，两边的亲属关系互相可见。':'Merged: the two people are one record and both sides of relations see each other.',
+  '还是软链接：两边都看得见这座桥，但谁也看不见对方家族的人。':'Still a soft link: both see the bridge, neither sees the other family\u2019s people.',
+  '已点头':'Nodded', '未点头':'Not yet',
+  '解绑后回退成软链接，各自的节点、关系、资料来源一条都不会丢。':'Unlinking falls back to a soft link; no node, relation or source is lost.',
+  '合并的条件是双方各点一次头。任何一方不点头，桥就一直保持虚线。':'Merging needs one nod from each side. Until both nod, the bridge stays dashed.',
+  '本家确认':'Confirm ours', '对方确认':'Confirm theirs',
+  '让两个家族接壤':'Make two families touch',
+  '选一位成员，再填上他要娶或要嫁的人。两个家族会在图上出现一座引力桥。':'Pick a member, then the person they marry. A gravity bridge appears between the two families.',
+  '本家族的这一位':'This side', '对方家族':'Their family', '对方姓名':'Their name',
+  '如 王家':'e.g. the Wong family', '他／她的名字':'Their name',
+  '默认只建立软链接：两边都看得见桥，但互相看不到对方家族的明细。要合并成同一份数据，需要双方各点一次头。':'By default this is a soft link: both see the bridge, neither sees the other\u2019s details. Merging into one dataset needs one nod from each side.',
+  '建立联姻':'Create the marriage',
+  '对方家族和姓名都要填':'Both the family and the name are needed',
+  /* ---- 度量 ---- */
+  '家族度量':'Family metrics',
+  '北极星只有一个：30 日内被本人认领的真实人数。节点总数不算。':'One north star only: real people who claimed themselves within 30 days. Node count does not count.',
+  '建出三代以上':'Three generations or more', '第一次分享出去':'First share',
+  '第一位家人认领':'First family claim', '出现第一段联姻':'First marriage bridge',
+  '已达成':'Done', '未发生':'Not yet',
+  '30 日内被本人认领':'Claimed within 30 days',
+  '节点可以由一个人狂加，认领不能':'One person can add nodes at will; claims cannot be faked',
+  '全部星数 / 还暗着':'All stars / still dark',
+  '暗星就是缺口，就是邀请的理由':'A dark star is a gap, and a reason to invite',
+  '累计分享':'Total shares',
+  '每次分享生成一张带暗星的卡':'Each share makes a card with a dark star',
+  '裂变系数 K':'Viral coefficient K',
+  '每次分享带来的有效认领，K 大于 1 才算跑通':'Effective claims per share; above 1 means it works',
+  '五步漏斗':'Five-step funnel',
+  '最大的一次流失通常发生在\u201c首次分享 → 首位认领\u201d之间。这一环掉，说明卡片还不够让人想点。':'The biggest drop is usually between \u201cfirst share\u201d and \u201cfirst claim\u201d. If that link fails, the card is not compelling enough.',
+  '生成一张邀请卡':'Make an invite card',
+  /* ---- 邀请 ---- */
+  '邀请家人来点亮':'Invite family to light a star',
+  '群里没人点链接，但会点开一张图。这张卡上有一个具体的缺口。':'Nobody taps a link in a group chat, but they will open a picture. This card shows one concrete gap.',
+  '邀请码':'Invite code', '模拟家人来认领':'Simulate a family member claiming',
+  '保存这张卡':'Save this card',
+  '你是哪一颗星？':'Which star is you?',
+  '只选你自己，别的都不用管。':'Pick only yourself; nothing else matters.',
+  '这一支已经全亮了。你可以新建一颗。':'This branch is fully lit. You can create a new star.',
+  '认领之后，你只能改和自己直接相关的那几个人。':'After claiming, you can only edit the people directly connected to you.',
+  '我是新来的':'I am new here',
+  /* ---- 云端 / 分享码 ---- */
+  '用邀请码加入':'Join with an invite code',
+  '输入家人给你的 6 位邀请码，他们已经补好的星会自动出现在你的星图上。':'Enter the 6-character code from your family; the stars they filled in appear on your map.',
+  '加入之后，你就是自己这片宇宙的中心，看到的称谓也按你来算。':'Once joined you are the center of your own universe, and every term is calculated from you.',
+  '连不上云端，稍后再试':'Cannot reach the cloud, try again later',
+  '身份没生成，重开一次试试':'Identity was not created; reopen and try again',
+  '请输入邀请码':'Enter the invite code',
+  '把星图交给家人':'Hand the map to your family',
+  '这串分享码里装着你现在的整张星图。发给家人，他们粘贴进来就能接着补，缺不了任何一颗星。':'This share code carries your whole map. Send it over; they paste it in and keep filling, with no star missing.',
+  '家人打开星裔 → 更多 → 家族宇宙 → 粘贴分享码，就能把你补的星并进他的星图。':'They open Xingyi → More → Family universe → paste the code, and your stars merge into their map.',
+  '复制分享码':'Copy the share code',
+  '粘贴家人的分享码':'Paste a family share code',
+  '家人发给你的那串 XY1- 开头的文字，粘进来就把他们的星并到你的星图上。':'Paste the text starting with XY1- that your family sent; their stars merge into your map.',
+  '只并入你这边还没有的星，你自己补的不会被覆盖。':'Only stars you do not have are merged; your own entries are never overwritten.',
+  '并进来':'Merge in',
+  '把宇宙连起来':'Connect the universe',
+  '一个人先建宇宙，拿到 6 位邀请码；家人用这串码加入，之后谁补的星都会并进同一片星图。':'One person creates the universe and gets a 6-character code; family joins with it, and every star anyone adds lands in the same map.',
+  '创建家族宇宙':'Create family universe',
+  '把现在的星图传上去，生成邀请码':'Upload the current map and get an invite code',
+  '输入家人发给你的 6 位码':'Enter the 6-character code from family',
+  '把星图交给家人 · 分享码':'Hand over the map · share code',
+  '不用联网，一串码复制给家人就行':'Works offline — just copy one string to your family',
+  '把家人补的星并进你的星图':'Merge the stars your family added into your map',
+  '云端只存星图本身，不存「你是谁」。所以同一片宇宙，每位家人打开时都以自己为中心。':'The cloud stores only the map, never who you are. So everyone opens the same universe as their own center.',
+  '宇宙建好了':'Universe created',
+  '把这串邀请码发给家人。他们打开星裔 → 更多 → 家族宇宙 → 用邀请码加入。':'Send this code to your family. They open Xingyi → More → Family universe → join with the code.',
+  '家人用同一个邀请码进来。你补的星传上去，他们点同步就能看到。':'Family enters with the same code. Push your stars and they see them on sync.',
+  '复制邀请码':'Copy invite code', '粘贴到微信发给家人':'Paste into a chat and send',
+  '从云端取回':'Pull from cloud', '看看家人新补了谁':'See who your family added',
+  '把改动传上去':'Push changes', '让家人同步到你补的星':'Let family sync your stars',
+  '退出这个宇宙':'Leave this universe', '只退出，本机星图保留':'Leaving only; this map stays',
+  '邀请码已复制':'Invite code copied',
+  /* ---- 数据与设置 ---- */
+  '数据与设置':'Data & settings',
+  '这一版的数据只存在这台设备的浏览器里，换设备或清缓存会丢。':'This version stores data in this device\u2019s browser; switching devices or clearing cache loses it.',
+  '家族宇宙 · 多人共用':'Family universe · shared',
+  '生成邀请码，家人一起补星':'Create a code so family can add stars',
+  '导出全量数据':'Export all data',
+  '一个 JSON 文件，可以换设备导入':'One JSON file you can import elsewhere',
+  '导入数据':'Import data', '选择之前导出的 JSON':'Pick a JSON you exported earlier',
+  '清空并重新开始':'Clear and start over',
+  '删除这台设备上的全部星图':'Delete every map on this device',
+  '星图平时只存在这台设备上；只有你主动开启「家族宇宙」时，才会把星图放到云端，让家人一起补。':'The map lives on this device. Only when you turn on the family universe is it placed in the cloud for family to add to.',
+  '确认清空？':'Clear everything?',
+  '这台设备上的所有星图数据会被删除，且无法恢复。':'Every map on this device will be deleted and cannot be recovered.',
+  '如果只是想重新看示例，可以先导出一份备份。':'If you only want to see the sample again, export a backup first.',
+  '算了':'Never mind', '确认清空':'Yes, clear it',
+  /* ---- 添加面板 / 引导 ---- */
+  '先选是谁的什么关系。位置、连线、辈分都会自动排好，不用手摆。':'Pick whose relation this is. Position, lines and generation are laid out for you.',
+  '以谁为基准':'Anchor', '是什么关系':'Relation',
+  '不用注册。先给家族起个名字，再点亮你自己。':'No sign-up. Name the family, then light yourself.',
+  '如 张家':'e.g. the Zhang family', '家人怎么叫你':'What your family calls you',
+  '如 1990':'e.g. 1990',
+  '之后你可以随时补资料、加家人。数据存在这台设备，连上家族宇宙后家人共享。':'Add profiles and people any time. Data stays here; family shares it once you join a universe.',
+  '家族名和你的名字都填一下':'Fill in both the family name and your name',
+  '三分钟，先把三代挂出来':'Three minutes, three generations',
+  '星 裔':'XINGYI', '血缘':'Blood', '姻亲':'In-law',
+  '婚姻枢纽':'Marriage hub', '待认领的暗星':'Unclaimed star',
+  '亮度＝资料完整度':'Brightness = profile completeness',
+  '认领人数、裂变系数 K、五步漏斗':'Claims, viral K, five-step funnel',
+  '软链接':'Soft link', '已合并':'Merged', '桥':'Bridge',
+  /* 中文称谓词 → 英文（用于把中文结果翻成英文的场合） */
+  '儿子':'son', '女儿':'daughter', '丈夫':'husband', '妻子':'wife',
+  '孙子':'grandson', '孙女':'granddaughter', '外孙':'grandson', '外孙女':'granddaughter',
+  '曾祖父':'great-grandfather', '曾祖母':'great-grandmother',
+  '伯父':'uncle', '叔父':'uncle', '姑姑':'aunt', '舅舅':'uncle', '姨':'aunt',
+  '堂兄弟':'paternal cousin', '堂姐妹':'paternal cousin',
+  '表兄弟':'cousin', '表姐妹':'cousin',
+  '哥哥':'elder brother', '弟弟':'younger brother', '姐姐':'elder sister', '妹妹':'younger sister',
+  '侄子':'nephew', '侄女':'niece', '外甥':'nephew', '外甥女':'niece',
+  '岳父':'father-in-law', '岳母':'mother-in-law', '公公':'father-in-law', '婆婆':'mother-in-law',
+  '嫂子':'sister-in-law', '弟媳':'sister-in-law', '姐夫':'brother-in-law', '妹夫':'brother-in-law',
+  '儿媳':'daughter-in-law', '女婿':'son-in-law', '继父':'stepfather', '继母':'stepmother',
+  '爷爷':'grandfather', '奶奶':'grandmother', '姥姥':'grandmother', '姥爷':'grandfather',
+  '侄子孙女':'great-niece', '侄孙':'great-nephew', '远亲':'distant relative',
+  '现在以 TA 为中心':'This view is centered here',
+  '拖动时间轴，看这一家怎么长出来':'Drag the timeline to watch this family grow',
+  '只看在世的':'Living only', '全部':'All'
+};
+const EN_PAT = [
+  [/^(\d+) 颗星 · 已点亮 (\d+)$/, (m, g1, g2, g3) => g1 + ' stars · ' + g2 + ' lit'],
+  [/^视角 · (.+)$/, (m, g1, g2, g3) => 'View · ' + enText(g1)],
+  [/^已挂上「(.+)」，星图重排中$/, (m, g1, g2, g3) => 'Added ' + g1 + ', re-laying the map'],
+  [/^「(.+)」又亮了一点$/, (m, g1, g2, g3) => g1 + ' shines a little brighter'],
+  [/^现在以「(.+)」为中心$/, (m, g1, g2, g3) => 'Now centered on ' + g1],
+  [/^「(.+)」点亮了 · 现在整张网以 TA 为中心$/, (m, g1, g2, g3) => g1 + ' is lit · the whole map now centers on them'],
+  [/^已加入 · 共 (\d+) 颗星$/, (m, g1, g2, g3) => 'Joined · ' + g1 + ' stars'],
+  [/^已取回 · 共 (\d+) 颗星$/, (m, g1, g2, g3) => 'Pulled · ' + g1 + ' stars'],
+  [/^并进来 (\d+) 颗新星 · 共 (\d+) 颗$/, (m, g1, g2, g3) => 'Merged ' + g1 + ' new stars · ' + g2 + ' in total'],
+  [/^已导入 (\d+) 颗星$/, (m, g1, g2, g3) => 'Imported ' + g1 + ' stars'],
+  [/^挂上了「(.+)」，还是暗的$/, (m, g1, g2, g3) => g1 + ' is placed, still unlit'],
+  [/^(.+) 眼里，(.+) 是(.+)$/, (m, g1, g2, g3) => g1 + ' sees ' + g2 + ' as ' + g3],
+  [/^上次同步：(.+)$/, (m, g1, g2, g3) => 'Last sync: ' + g1],
+  [/^邀请码是 6 位字符$/, () => 'The invite code is 6 characters'],
+  [/^没找到这个邀请码$/, () => 'Invite code not found'],
+  [/^那颗星不见了$/, () => 'That star is gone'],
+  [/^这些星你这边已经有了$/, () => 'You already have these stars'],
+  [/^这串码读不出来，确认有没有复制全$/, () => 'Cannot read this code — check that you copied all of it'],
+  [/^这串码不是星裔的分享码$/, () => 'This is not a Xingyi share code'],
+  [/^复制不了，长按上面的文字手动复制$/, () => 'Cannot copy — select the text above manually'],
+  [/^复制不了，手写一下：(.+)$/, (m, g1, g2, g3) => 'Cannot copy — note it down: ' + g1],
+  [/^已回到全景$/, () => 'Back to the overview'],
+  [/^按关系远近，一圈一圈围起来$/, () => 'Arranged in rings by closeness'],
+  [/^回到按辈分分层的族谱$/, () => 'Back to the generational tree'],
+  [/^这是示例家族，只在这里演示，不会存进你的数据$/, () => 'This is a sample family. It is only a demo and is never saved to your data.'],
+  [/^点任意一颗星，看它和你是什么关系$/, () => 'Tap any star to see how they are related to you'],
+  [/^示例数据 · 点这里建我自己的$/, () => 'Sample data · tap to build my own'],
+  [/^补上出生年，就能分出是哥哥还是弟弟、姐姐还是妹妹$/,
+    () => 'Add a birth year and we can tell brother from sister, elder from younger'],
+  [/^图上已经有一个「(.+)」$/, (m, g1, g2, g3) => 'Already on the map: ' + g1],
+  [/^简介按「(.+)」隐藏了$/, (m, g1, g2, g3) => 'Profile hidden by the "' + g1 + '" setting'],
+  [/^补充「(.+)」$/, (m, g1, g2, g3) => 'Edit ' + g1],
+  [/^把「(.+)」并进「(.+)」？资料和关系会合成一份，不能撤销。$/, (m, g1, g2, g3) => 'Merge ' + g1 + ' into ' + g2 + '? Profiles and relations become one record, and this cannot be undone.'],
+  [/^那「(.+)」的父亲呢？$/, (m, g1, g2, g3) => 'And the father of ' + g1 + '?'],
+  [/^填个名字，或者点“不知道”$/, () => 'Give a name, or tap \u201cNot sure\u201d'],
+  [/^已聚焦「(.+)」$/, (m, g1, g2, g3) => 'Now focused on ' + g1],
+  [/^合并完成：两个人的记录合成一条，亲家关系双向可见$/,
+    () => 'Merged: two people are one record, and the in-law relation is visible both ways'],
+  [/^记下一次点头，还差另一边$/, () => 'One nod recorded; the other side is still pending'],
+  [/^已解绑，回退成软链接，两边数据一条都没动$/,
+    () => 'Unlinked, back to a soft link — nothing was touched on either side'],
+  [/^已连接 · 邀请码 (.+)$/, (m, g1, g2, g3) => 'Connected · code ' + g1],
+  [/^家族宇宙 · (.+)$/, (m, g1, g2, g3) => 'Family universe · ' + g1],
+  [/^已导出$/, () => 'Exported'],
+  [/^已保存$/, () => 'Saved'],
+  [/^正在创建…$/, () => 'Creating…'],
+  [/^已上传$/, () => 'Pushed'],
+  [/^已退出这个宇宙$/, () => 'Left this universe'],
+  [/^没有找到这个邀请码$/, () => 'No invite code like that'],
+  [/^把这张图发到家族群。对方打开星裔输入 (.+)，就能认领(.+)。认领完，整张网会以 TA 自己为中心重排，称呼也按 TA 那边重新算。$/,
+    (m, g1, g2, g3) => 'Send this picture to the family group. They open Xingyi and enter ' + g1 + ' to claim ' + (g2 || 'their star') + '. The whole web then re-centers on them, and terms are recalculated from their side.'],
+  [/^「(.+)」还空着，你能补一下吗$/, (m, g1, g2, g3) => '"' + g1 + '" is still empty — can you fill it in?'],
+  [/^有一颗星还空着，你能补一下吗$/, () => 'One star is still empty — can you fill it in?'],
+  [/^把这张卡发到家族群|^发到家族群$/, () => 'Send this card to the family group'],
+  [/^TA 眼里的你 · (.+)$/, (m, g1, g2, g3) => 'You in their eyes · ' + enText(g1)],
+  [/^(\d+) 颗星 · 已与其他家族相连$/, (m, g1, g2, g3) => g1 + ' stars · linked to another family'],
+  [/^(\d+) 颗星$/, (m, g1, g2, g3) => g1 + ' stars'],
+  [/^软链接 · 双方数据互不可见 · (.+)$/, (m, g1, g2, g3) => 'Soft link · details hidden both ways · ' + enText(g1)],
+  [/^已合并 · 双方数据互相可见$/, () => 'Merged · details visible both ways'],
+  [/^本家已点头，对方未点头$/, () => 'we nodded, they have not'],
+  [/^双方已点头$/, () => 'both nodded'],
+  [/^(.+) 的星图$/, (m, g1, g2, g3) => g1 + ' star map'],
+  [/^TA 是 (.+)$/, (m, g1, g2, g3) => 'They are ' + enText(g1)],
+  [/^(\d+) 人$/, (m, g1, g2, g3) => g1 + ' people'],
+  [/^(\d+) 次$/, (m, g1, g2, g3) => g1 + ' shares'],
+  [/^当前 (\d+) 代$/, (m, g1, g2, g3) => g1 + ' generations now'],
+  [/^(\d+) 座桥$/, (m, g1, g2, g3) => g1 + ' bridge' + (Number(g1) > 1 ? 's' : '')]
+];
+
+function enText(s){
+  const v = s.trim();
+  if(!v) return s;
+  if(EN_EXACT[v]) return s.replace(v, EN_EXACT[v]);
+  for(let i = 0; i < EN_PAT.length; i++){
+    if(EN_PAT[i][0].test(v)) return s.replace(EN_PAT[i][0], EN_PAT[i][1]);
+  }
+  return s;
+}
+function trTextNode(node){
+  const v = node.nodeValue;
+  if(!v || !/[\u4e00-\u9fff]/.test(v)) return;
+  const r = enText(v);
+  if(r !== v) node.nodeValue = r;
+}
+function trAttr(el){
+  ['placeholder', 'aria-label', 'title'].forEach(a => {
+    const v = el.getAttribute && el.getAttribute(a);
+    if(v && /[\u4e00-\u9fff]/.test(v)){
+      const r = enText(v);
+      if(r !== v) el.setAttribute(a, r);
+    }
+  });
+}
+function trWalk(root){
+  if(!root || LANG !== 'en') return;
+  if(root.nodeType === 3){ trTextNode(root); return; }
+  if(root.nodeType === 1) trAttr(root);
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null);
+  let n = w.nextNode();
+  while(n){
+    if(n.nodeType === 3) trTextNode(n);
+    else trAttr(n);
+    n = w.nextNode();
+  }
+}
+let _trObs = null;
+function langBoot(){
+  if(LANG !== 'en') { markLangBtn(); return; }
+  trWalk(document.body);
+  _trObs = new MutationObserver(muts => {
+    muts.forEach(m => {
+      if(m.type === 'characterData'){ trTextNode(m.target); return; }
+      m.addedNodes && m.addedNodes.forEach(nd => trWalk(nd));
+      if(m.type === 'attributes') trAttr(m.target);
+    });
+  });
+  _trObs.observe(document.body, {
+    subtree: true, childList: true, characterData: true,
+    attributes: true, attributeFilter: ['placeholder', 'aria-label', 'title']
+  });
+  markLangBtn();
+}
+function markLangBtn(){
+  const b = document.getElementById('btnLang');
+  if(b) b.textContent = LANG === 'en' ? '中' : 'EN';
+}
+function setLang(l){
+  try{ localStorage.setItem(LANG_KEY, l); }catch(e){}
+  location.reload();
+}
+function mountLangBtn(){
+  const more = document.getElementById('btnMore');
+  if(!more || document.getElementById('btnLang')) return;
+  const b = document.createElement('button');
+  b.id = 'btnLang';
+  b.className = 'icon-btn';
+  b.setAttribute('aria-label', 'language');
+  b.style.width = 'auto';
+  b.style.padding = '0 9px';
+  b.style.fontSize = '11px';
+  b.style.letterSpacing = '.08em';
+  b.textContent = LANG === 'en' ? '中' : 'EN';
+  b.onclick = () => setLang(LANG === 'en' ? 'zh' : 'en');
+  more.parentNode.insertBefore(b, more);
+}
+
+const KEY = 'xingpu.v2';
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+
+let S = null;
+const view = { x:0, y:0, k:1 };
+let nodes = [], edges = [], fitBox = null;
+let selected = null, hovered = null;
+let yearLimit = 99999, timelineOn = false;
+let layoutMode = 'radial';
+let spinHold = 0;
+
+function blank(){
+  return { me:null, fams:[], people:[], unions:[], pc:[], invites:[], shares:0, seq:1, gid:null, code:'', token:'', rev:0, syncedAt:0, dead:[] };
+}
+var syncQuiet = 0;
+function save(){
+  try{ if(typeof updateHud === 'function') updateHud(); }catch(e){}
+  /* 示例数据只在内存里演示：不写盘、不上云，重开就回到空态 */
+  if(S && S.demo) return;
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+  if(typeof schedulePush === 'function') schedulePush();
+}
+/* 老数据修复：夫妻关系在、但缺亲子边时补全。
+   历史版本"补配偶不过来孩子"，会让外公的配偶变成没有血缘的旁支，称谓掉进远亲 */
+function repairGraph(s){
+  if(!s || !Array.isArray(s.pc) || !Array.isArray(s.unions)) return s;
+  const kids = id => s.pc.filter(e => e.p === id).map(e => e.c);
+  s.unions.forEach(u => {
+    if(!u.a || !u.b) return;
+    const adopt = (from, to) => {
+      kids(from).forEach(cid => {
+        /* 孩子已经有两位家长：另一位不是这个人，绝不猜（重组/多配偶家庭靠这条守住） */
+        if(s.pc.filter(e => e.c === cid).length !== 1) return;
+        if(s.pc.some(e => e.p === to && e.c === cid)) return;
+        s.pc.push({ p: to, c: cid, kind: 'blood' });
+      });
+    };
+    adopt(u.a, u.b);
+    adopt(u.b, u.a);
+  });
+  return s;
+}
+/* ---------- 去重与合并 ---------- */
+function normName(n){
+  return String(n == null ? '' : n)
+    .replace(/[\s\u3000]+/g, '')
+    .replace(/[（(][^）)]*[）)]/g, '')
+    .toLowerCase();
+}
+function spousesOf(id){
+  const out = [];
+  S.unions.forEach(u => { if(u.a === id) out.push(u.b); if(u.b === id) out.push(u.a); });
+  return out;
+}
+function kidsOf(id){ return S.pc.filter(e => e.p === id).map(e => e.c); }
+
+/* 录入前查重：这个位置已经有同名的人，就不必再长一颗星 */
+function sameSpot(anchorId, role, name){
+  const n = normName(name);
+  if(!n || !anchorId) return null;
+  const pick = ids => ids.map(id => P(id)).filter(p => p && normName(p.name) === n)[0] || null;
+  if(role === 'spouse') return pick(spousesOf(anchorId));
+  if(role === 'father' || role === 'mother'){
+    const want = role === 'mother' ? 'f' : 'm';
+    return pick(S.pc.filter(e => e.c === anchorId).map(e => e.p)
+      .filter(pid => { const p = P(pid); return p && p.sex === want; }));
+  }
+  if(role === 'child'){
+    const ids = [];
+    [anchorId].concat(spousesOf(anchorId)).forEach(pid => kidsOf(pid).forEach(k => { if(ids.indexOf(k) < 0) ids.push(k); }));
+    return pick(ids);
+  }
+  if(role === 'sibling'){
+    const ids = [];
+    S.pc.filter(e => e.c === anchorId).forEach(e => kidsOf(e.p).forEach(k => {
+      if(k !== anchorId && ids.indexOf(k) < 0) ids.push(k);
+    }));
+    return pick(ids);
+  }
+  return null;
+}
+
+/* 事后找疑似同一人：同名 / 同一个配偶 / 同一对父母 */
+function dupCandidatesFor(id){
+  const self = P(id);
+  if(!self) return [];
+  const n = normName(self.name);
+  const sp = {}, pa = {};
+  S.unions.forEach(u => { if(u.a === id) sp[u.b] = 1; if(u.b === id) sp[u.a] = 1; });
+  S.pc.forEach(e => { if(e.c === id) pa[e.p] = 1; });
+  const out = [];
+  S.people.forEach(p => {
+    if(p.id === id) return;
+    const why = [];
+    if(n && normName(p.name) === n) why.push('同名');
+    const psp = [], ppa = [];
+    S.unions.forEach(u => { if(u.a === p.id) psp.push(u.b); if(u.b === p.id) psp.push(u.a); });
+    S.pc.forEach(e => { if(e.c === p.id) ppa.push(e.p); });
+    if(psp.some(x => sp[x])) why.push('同一个配偶');
+    if(ppa.some(x => pa[x])) why.push('同一对父母');
+    if(!why.length) return;
+    out.push({ id: p.id, name: p.name || '未命名', why: why.join(' / '), claim: !!p.claim });
+  });
+  return out.slice(0, 3);
+}
+
+/* 合成一颗星：信息全的当主，关系改指过去并去重，留墓碑防云端复活 */
+function mergePeople(keepId, dropId){
+  if(!keepId || !dropId || keepId === dropId) return null;
+  let keep = P(keepId), drop = P(dropId);
+  if(!keep || !drop) return null;
+  const score = p => (p.b?1:0) + (p.d?1:0) + (p.note?1:0) + (p.img?1:0) + (p.claim?3:0);
+  if(score(drop) > score(keep)){
+    const t = keepId; keepId = dropId; dropId = t;
+    keep = P(keepId); drop = P(dropId);
+  }
+  ['b','d','note','img','sex'].forEach(k => { if(!keep[k] && drop[k]) keep[k] = drop[k]; });
+  if(!keep.claim && drop.claim){ keep.claim = true; keep.claimAt = drop.claimAt || Date.now(); }
+
+  const toKeep = x => (x === dropId ? keepId : x);
+  S.pc = S.pc.map(e => ({ p: toKeep(e.p), c: toKeep(e.c), kind: e.kind || 'blood' }))
+    .filter(e => e.p !== e.c);
+  const pk = {};
+  S.pc = S.pc.filter(e => { const k = e.p + '|' + e.c; if(pk[k]) return false; pk[k] = 1; return true; });
+
+  S.unions = S.unions.map(u => Object.assign({}, u, { a: toKeep(u.a), b: toKeep(u.b) }))
+    .filter(u => u.a && u.b && u.a !== u.b);
+  const uk = {};
+  S.unions = S.unions.filter(u => { const k = [u.a, u.b].sort().join('|'); if(uk[k]) return false; uk[k] = 1; return true; });
+
+  if(S.invites) S.invites = S.invites.map(i => Object.assign({}, i, { target: toKeep(i.target) }));
+  S.people = S.people.filter(p => p.id !== dropId);
+  if(S.me === dropId) S.me = keepId;
+  if(viewerId === dropId) viewerId = keepId;
+  S.dead = S.dead || [];
+  if(S.dead.indexOf(dropId) < 0) S.dead.push(dropId);
+  return { keepId: keepId };
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    if(!s || !Array.isArray(s.people)) return null;
+    repairGraph(s);
+    _purgeDead(s);
+    return s;
+  }catch(e){ return null; }
+}
+
+const P = id => S.people.find(p => p.id === id);
+const F = id => S.fams.find(f => f.id === id);
+const PALETTE = ['#FF6B4A','#F2C14E','#3DDC97','#3BC9DB','#7C6BFF','#FF5FA2','#A3E635','#FF9F1C','#C77DFF','#EF476F'];
+
+function pickColor(seed){
+  let h = 0;
+  const s0 = String(seed);
+  for(let i = 0; i < s0.length; i++) h = (h * 31 + s0.charCodeAt(i)) % 9973;
+  return PALETTE[h % PALETTE.length];
+}
+
+function famColor(f){
+  if(!f) return '#D9A75E';
+  if(!f.color){
+    const used = (S && S.fams ? S.fams : []).filter(x => x.color).map(x => x.color);
+    let c = pickColor(f.id + (f.name || ''));
+    let guard = 0;
+    while(used.indexOf(c) >= 0 && guard++ < 12) c = PALETTE[(PALETTE.indexOf(c) + 1) % PALETTE.length];
+    f.color = c;
+  }
+  return f.color;
+}
+
+function hexRgb(h){
+  let s0 = String(h || '#D9A75E').replace('#','');
+  if(!/^[0-9a-fA-F]{3,6}$/.test(s0)) s0 = 'D9A75E';
+  if(s0.length === 3) s0 = s0.split('').map(x => x + x).join('');
+  return [parseInt(s0.slice(0,2),16), parseInt(s0.slice(2,4),16), parseInt(s0.slice(4,6),16)];
+}
+function rgbOf(h){ return hexRgb(h).join(','); }
+
+function hexToHsl(h){
+  const [r,g,b] = hexRgb(h).map(x => x / 255);
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+  let hh = 0, ss = 0, ll = (mx + mn) / 2;
+  if(mx !== mn){
+    const d0 = mx - mn;
+    ss = ll > 0.5 ? d0 / (2 - mx - mn) : d0 / (mx + mn);
+    if(mx === r) hh = (g - b) / d0 + (g < b ? 6 : 0);
+    else if(mx === g) hh = (b - r) / d0 + 2;
+    else hh = (r - g) / d0 + 4;
+    hh /= 6;
+  }
+  return [hh * 360, ss, ll];
+}
+function hslToHex(h, s0, l){
+  h = ((h % 360) + 360) % 360 / 360;
+  const q = l < 0.5 ? l * (1 + s0) : l + s0 - l * s0;
+  const p0 = 2 * l - q;
+  const f = t => {
+    if(t < 0) t += 1;
+    if(t > 1) t -= 1;
+    if(t < 1/6) return p0 + (q - p0) * 6 * t;
+    if(t < 1/2) return q;
+    if(t < 2/3) return p0 + (q - p0) * (2/3 - t) * 6;
+    return p0;
+  };
+  const c = [f(h + 1/3), f(h), f(h - 1/3)].map(x => Math.round(x * 255).toString(16).padStart(2,'0'));
+  return '#' + c.join('');
+}
+
+/* 两个家族色在色相环上走短弧混合：孩子是两家颜色的"中间色"，不是脏灰 */
+function mixHex(a, b, t){
+  const A = hexToHsl(a), B = hexToHsl(b);
+  let dh = B[0] - A[0];
+  if(dh > 180) dh -= 360;
+  if(dh < -180) dh += 360;
+  const hh = A[0] + dh * t;
+  const ss = Math.max(0.55, Math.max(A[1], B[1]) * 0.92);
+  const ll = Math.min(0.7, Math.max(0.5, Math.max(A[2], B[2]) * 0.96));
+  return hslToHex(hh, ss, ll);
+}
+
+function liftHex(h, t){
+  const [hh, ss, ll] = hexToHsl(h);
+  return hslToHex(hh, Math.min(1, ss), Math.min(0.92, ll + (1 - ll) * t));
+}
+
+/* ---------- 示例家族 ---------- */
+function seedDemo(){
+  const s = blank();
+  s.fams.push({ id:'fA', name:'张家', surname:'张', hue:'gold', color:'#FF6B4A' });
+  s.fams.push({ id:'fB', name:'李家', surname:'李', hue:'indigo', color:'#3BC9DB' });
+
+  const add = (fid,name,sex,b,d,note,img)=>{
+    const id = uid('p');
+    s.people.push({ id, fid, name, sex, b:b||'', d:d||'', note:note||'', img:img||'', claim:true, claimAt: Date.now() - 18*86400000, privacy:'blood' });
+    return id;
+  };
+  const union = (a,b,year)=>{
+    const id = uid('u'); s.unions.push({ id, a, b, year:year||'', link:'hard', agree:{} }); return id;
+  };
+  const child = (p,c)=>{ s.pc.push({ p, c, kind:'blood' }); };
+
+  // 张家
+  const zhangDeMao = add('fA','张德茂','m',1932,2008,'做过乡村教师，写得一手好毛笔字。');
+  const wangXiuYing= add('fA','王秀英','f',1935,2016,'爱听评弹，家里那台缝纫机用了四十年。');
+  union(zhangDeMao, wangXiuYing, 1956);
+
+  const zhangJianGuo= add('fA','张建国','m',1958,'', '话不多，会修一切东西。');
+  const zhangJianJun= add('fA','张建军','m',1962,'');
+  const zhangMin    = add('fA','张敏','f',1965,'', '一直住在老宅，家里的事都靠她张罗。');
+  child(zhangDeMao, zhangJianGuo); child(wangXiuYing, zhangJianGuo);
+  child(zhangDeMao, zhangJianJun); child(wangXiuYing, zhangJianJun);
+  child(zhangDeMao, zhangMin);     child(wangXiuYing, zhangMin);
+
+  // 李家的一支，经李淑芬与张建国联姻
+  const liChangGeng = add('fB','李长庚','m',1930,2010,'', '');
+  const zhouYuLan   = add('fB','周玉兰','f',1933,'');
+  union(liChangGeng, zhouYuLan, 1954);
+  const liShuFen = add('fB','李淑芬','f',1960,'', '娘家在城南，嫁过来时带了一箱书。');
+  const liGuoQiang= add('fB','李国强','m',1957,'');
+  child(liChangGeng, liShuFen); child(zhouYuLan, liShuFen);
+  child(liChangGeng, liGuoQiang);
+
+  const bridgeId = union(zhangJianGuo, liShuFen, 1983);   // ← 跨家族婚姻：默认软链接
+  const bridgeU = s.unions.find(u => u.id === bridgeId);
+  if(bridgeU){ bridgeU.link = 'soft'; bridgeU.agree = { fA: true }; }
+
+  const zhangWei = add('fA','张伟','m',1985,'', '');
+  const zhangLin = add('fA','张琳','f',1988,'');
+  child(zhangJianGuo, zhangWei); child(liShuFen, zhangWei);
+  child(zhangJianGuo, zhangLin); child(liShuFen, zhangLin);
+
+  const chenJing = add('fA','陈静','f',1987,'');
+  union(zhangWei, chenJing, 2011);
+  const zhangYiNuo = add('fA','张一诺','f',2014,'', '喜欢在阳台上种薄荷。');
+  child(zhangWei, zhangYiNuo); child(chenJing, zhangYiNuo);
+
+  const zhangHao = add('fA','张浩','m',1990,'');
+  child(zhangJianJun, zhangHao);
+
+  const liZhe = add('fB','李哲','m',1988,'');
+  child(liGuoQiang, liZhe);
+
+  // 几颗还没被认领的暗星
+  [zhangHao, liZhe, zhangJianJun, liGuoQiang].forEach(id => {
+    const p = s.people.find(x => x.id === id);
+    if(p){ p.claim = false; p.claimAt = 0; p.b = ''; p.note = ''; }
+  });
+
+  s.me = zhangWei;
+  /* 从源头打标：示例图绝不落盘、绝不上云 */
+  s.demo = true;
+  return s;
+}
+
+/* ---------- 关系查询 ---------- */
+function adjacency(){
+  const adj = {};
+  const push = (a,b,type) => { (adj[a] = adj[a] || []).push({ to:b, type }); };
+  S.pc.forEach(e => { push(e.p, e.c, 'down'); push(e.c, e.p, 'up'); });
+  S.unions.forEach(u => {
+    if(u.a && u.b){ push(u.a, u.b, 'spouse'); push(u.b, u.a, 'spouse'); }
+  });
+  return adj;
+}
+
+/* 从 from 到 to 的最短关系路径，返回方向序列 */
+function relSteps(from, to){
+  if(from === to) return [];
+  const adj = adjacency();
+  const q = [[from, []]], seen = new Set([from]);
+  while(q.length){
+    const [cur, path] = q.shift();
+    for(const e of (adj[cur] || [])){
+      if(seen.has(e.to)) continue;
+      const np = path.concat([e.type]);
+      if(e.to === to) return np;
+      seen.add(e.to);
+      q.push([e.to, np]);
+    }
+  }
+  return null;
+}
+
+/* 亲属称谓：按谱系计算（共同祖先 + 上下代数 + 姻亲），不再靠固定路径查表 */
+function _pOf(id){ return S.pc.filter(e => e.c === id).map(e => e.p); }
+function _isF(id){ const p = P(id); return !!p && p.sex === 'f'; }
+function _yearOf(id){ const p = P(id); const y = p && p.b ? parseInt(p.b, 10) : NaN; return isNaN(y) ? null : y; }
+function _older(a, b){ const ya = _yearOf(a), yb = _yearOf(b); if(ya === null || yb === null) return null; return ya < yb; }
+function _ancDist(to){
+  const d = {}; d[to] = 0;
+  const q = [[to, 0]];
+  while(q.length){
+    const [cur] = q.shift();
+    const dd = d[cur];
+    _pOf(cur).forEach(p => { if(d[p] === undefined){ d[p] = dd + 1; q.push([p, dd + 1]); } });
+  }
+  return d;
+}
+function _pathUp(from, target){
+  const q = [[from, [from]]], seen = { [from]: 1 };
+  while(q.length){
+    const [cur, path] = q.shift();
+    if(cur === target) return path;
+    _pOf(cur).forEach(p => { if(!seen[p]){ seen[p] = 1; q.push([p, path.concat([p])]); } });
+  }
+  return null;
+}
+function _sib(from, to){
+  const sx = _isF(to) ? 'f' : 'm';
+  const older = _older(to, from);
+  if(older === true)  return sx === 'f' ? '姐姐' : '哥哥';
+  if(older === false) return sx === 'f' ? '妹妹' : '弟弟';
+  return sx === 'f' ? '姐妹' : '兄弟';
+}
+function _byGen(from, to, fc, tc, up, down){
+  const sx = _isF(to) ? 'f' : 'm';
+  if(down === 0){
+    if(up === 1) return sx === 'f' ? '母亲' : '父亲';
+    const paternal = !_isF(fc[1]);
+    if(up === 2) return paternal ? (sx === 'f' ? '奶奶' : '爷爷') : (sx === 'f' ? '姥姥' : '姥爷');
+    if(up === 3) return (paternal ? '曾' : '外曾') + (sx === 'f' ? '祖母' : '祖父');
+    return (paternal ? '' : '外') + '高祖辈';
+  }
+  if(up === 0){
+    const viaD = _isF(tc[down - 1]);
+    if(down === 1) return sx === 'f' ? '女儿' : '儿子';
+    if(down === 2) return viaD ? (sx === 'f' ? '外孙女' : '外孙') : (sx === 'f' ? '孙女' : '孙子');
+    if(down === 3) return (viaD ? '外' : '') + (sx === 'f' ? '曾孙女' : '曾孙');
+    return down + ' 代孙辈';
+  }
+  const paternal = !_isF(fc[1]);
+  const branch = tc[down - 1];
+  if(up === 1 && down === 1) return _sib(from, to);
+  if(up === 1 && down === 2){
+    const viaBrother = !_isF(branch);
+    return viaBrother ? (sx === 'f' ? '侄女' : '侄子') : (sx === 'f' ? '外甥女' : '外甥');
+  }
+  if(up === 2 && down === 1){
+    if(paternal) return sx === 'm' ? (_older(to, fc[1]) === true ? '伯伯' : '叔叔') : '姑姑';
+    return sx === 'm' ? '舅舅' : '姨妈';
+  }
+  if(up === 2 && down === 2){
+    const samePat = paternal && !_isF(branch);
+    return samePat ? (sx === 'f' ? '堂姐妹' : '堂兄弟') : (sx === 'f' ? '表姐妹' : '表兄弟');
+  }
+  if(up === 2 && down === 3){
+    const viaBrother = !_isF(tc[down - 2]);
+    return viaBrother ? (sx === 'f' ? '堂侄女' : '堂侄') : (sx === 'f' ? '表侄女' : '表侄');
+  }
+  if(up === 3 && down === 1){
+    if(paternal) return sx === 'm' ? (_older(to, fc[1]) === true ? '伯祖父' : '叔祖父') : '姑婆';
+    return sx === 'm' ? '舅公' : '姨婆';
+  }
+  if(up === 3 && down === 2) return paternal ? (sx === 'f' ? '堂姑' : '堂叔伯') : (sx === 'f' ? '表姑' : '表叔伯');
+  if(up === down) return '同辈族亲（' + (up - 1) + ' 代旁系）';
+  return (down > up ? '晚辈' : '长辈') + '族亲（' + Math.min(up, down) + ' 代旁系）';
+}
+function _kinBlood(from, to){
+  if(from === to) return '自己';
+  const A = _ancDist(to);
+  const q = [[from, [from]]], seen = { [from]: 1 };
+  while(q.length){
+    const [cur, chain] = q.shift();
+    if(A[cur] !== undefined){
+      const up = chain.length - 1, down = A[cur];
+      const tc = _pathUp(to, cur) || [cur];
+      return _byGen(from, to, chain, tc, up, down);
+    }
+    _pOf(cur).forEach(p => { if(!seen[p]){ seen[p] = 1; q.push([p, chain.concat([p])]); } });
+  }
+  return null;
+}
+function _spouseTerm(fromId, partner, toId, bloodTerm){
+  if(bloodTerm === '自己') return '配偶';
+  const sx = _isF(toId) ? 'f' : 'm';
+  if(/^(哥哥|弟弟|姐姐|妹妹|兄弟|姐妹)$/.test(bloodTerm)){
+    const sib = _sib(fromId, partner);
+    if(sib === '弟弟' || sib === '妹妹') return sx === 'f' ? '弟媳' : '妹夫';
+    return sx === 'f' ? '嫂子' : '姐夫';
+  }
+  if(bloodTerm === '儿子' || bloodTerm === '女儿') return sx === 'f' ? '儿媳' : '女婿';
+  if(bloodTerm === '父亲' || bloodTerm === '母亲') return sx === 'f' ? '继母' : '继父';
+  return bloodTerm + '的配偶';
+}
+function _inLaw(fromId, spouseId, toId, bloodTerm){
+  const meF = _isF(fromId);
+  if(bloodTerm === '父亲') return meF ? '公公' : '岳父';
+  if(bloodTerm === '母亲') return meF ? '婆婆' : '岳母';
+  if(/^(哥哥|弟弟|姐姐|妹妹|兄弟|姐妹)$/.test(bloodTerm)) return '配偶的' + bloodTerm;
+  if(/^(儿子|女儿)$/.test(bloodTerm)) return bloodTerm === '儿子' ? '继子' : '继女';
+  return '配偶的' + bloodTerm;
+}
+function kinTerm(fromId, toId){
+  if(!fromId || !toId) return '';
+  if(fromId === toId) return '自己';
+  const blood = _kinBlood(fromId, toId);
+  if(blood) return blood;
+  const tsp = S.unions.filter(u => u.a === toId || u.b === toId).map(u => (u.a === toId ? u.b : u.a));
+  for(let i = 0; i < tsp.length; i++){
+    const t = _kinBlood(fromId, tsp[i]);
+    if(t) return _spouseTerm(fromId, tsp[i], toId, t);
+  }
+  const fsp = S.unions.filter(u => u.a === fromId || u.b === fromId).map(u => (u.a === fromId ? u.b : u.a));
+  for(let i = 0; i < fsp.length; i++){
+    const t = _kinBlood(fsp[i], toId);
+    if(t) return _inLaw(fromId, fsp[i], toId, t);
+    const tsp2 = S.unions.filter(u => u.a === toId || u.b === toId).map(u => (u.a === toId ? u.b : u.a));
+    for(let j = 0; j < tsp2.length; j++){
+      const t2 = _kinBlood(fsp[i], tsp2[j]);
+      if(t2) return _spouseTerm(fromId, tsp2[j], toId, t2);
+    }
+  }
+  return '远亲';
+}
+
+function pathNames(fromId, toId){
+  const adj = adjacency();
+  const q = [[fromId, [fromId]]], seen = new Set([fromId]);
+  while(q.length){
+    const [cur, path] = q.shift();
+    for(const e of (adj[cur] || [])){
+      if(seen.has(e.to)) continue;
+      const np = path.concat([e.to]);
+      if(e.to === toId) return np;
+      seen.add(e.to); q.push([e.to, np]);
+    }
+  }
+  return [fromId];
+}
+
+/* ---------- 图构建 ---------- */
+function buildGraph(){
+  nodes = []; edges = [];
+  const people = S.people.slice();
+
+  // 代数
+  const g = {}; people.forEach(p => g[p.id] = 0);
+  for(let it = 0; it < 60; it++){
+    for(const u of S.unions){
+      if(!u.a || !u.b) continue;
+      if(g[u.a] === undefined || g[u.b] === undefined) continue;
+      const m = Math.max(g[u.a], g[u.b]);
+      g[u.a] = m; g[u.b] = m;
+    }
+    for(const e of S.pc){
+      if(g[e.c] === undefined || g[e.p] === undefined) continue;
+      g[e.c] = Math.max(g[e.c], g[e.p] + 1);
+    }
+  }
+  let minG = 0, maxG = 0;
+  people.forEach(p => { minG = Math.min(minG, g[p.id]); maxG = Math.max(maxG, g[p.id]); });
+  people.forEach(p => g[p.id] -= minG);
+  maxG -= minG;
+
+  // 家庭簇中心
+  const famIdx = {}; S.fams.forEach((f,i) => famIdx[f.id] = i);
+  const famCount = Math.max(1, S.fams.length);
+  const FAM_SPREAD = famCount > 1 ? 150 : 0;
+  const famTarget = {};
+  S.fams.forEach((f,i) => {
+    const n = S.people.filter(p => p.fid === f.id).length;
+    famTarget[f.id] = (i - (famCount - 1)/2) * Math.max(FAM_SPREAD, 90);
+  });
+
+  const ROW = 116;
+  const pos = {};
+
+  let radialDone = false;
+  if(layoutMode === 'radial' && S.people.length){
+    const rp = radialPositions(viewerId || S.me);
+    if(rp){ Object.keys(rp).forEach(id => pos[id] = rp[id]); radialDone = true; }
+  }
+  if(!radialDone){
+    // 初始 x：按家庭分组均匀铺开
+    const byRow = {};
+    people.forEach(p => { (byRow[g[p.id]] = byRow[g[p.id]] || []).push(p); });
+    Object.keys(byRow).forEach(r => {
+      const list = byRow[r];
+      list.sort((a,b) => (famIdx[a.fid]||0) - (famIdx[b.fid]||0));
+      list.forEach((p,i) => pos[p.id] = { x: (i - (list.length-1)/2) * 92, y: g[p.id] * ROW });
+    });
+
+    // 一维力：只调 x
+    const GAP = 88;
+    for(let it = 0; it < 320; it++){
+      const force = {};
+      people.forEach(p => force[p.id] = 0);
+
+      for(const e of S.pc){
+        if(!pos[e.p] || !pos[e.c]) continue;
+        const dx = pos[e.p].x - pos[e.c].x;
+        force[e.c] += dx * 0.020;
+        force[e.p] -= dx * 0.008;
+      }
+      for(const u of S.unions){
+        if(!u.a || !u.b || !pos[u.a] || !pos[u.b]) continue;
+        const dx = pos[u.a].x - pos[u.b].x;
+        const want = 58;                       // 夫妻间距更紧
+        const cur = Math.abs(dx);
+        const diff = (cur - want) * Math.sign(dx || 1);
+        force[u.b] += diff * 0.14;
+        force[u.a] -= diff * 0.14;
+      }
+      // 同代互斥
+      Object.keys(byRow).forEach(r => {
+        const list = byRow[r].filter(p => pos[p.id]);
+        for(let i = 0; i < list.length; i++){
+          for(let j = i+1; j < list.length; j++){
+            const a = list[i].id, b = list[j].id;
+            const dx = pos[b].x - pos[a].x;
+            const d = Math.abs(dx);
+            if(d < GAP){
+              const pushAmt = (GAP - d) * 0.34 * Math.sign(dx || 1);
+              force[a] -= pushAmt; force[b] += pushAmt;
+            }
+          }
+        }
+      });
+      // 家庭引力：只对"同族且非跨族婚姻"的人生效
+      people.forEach(p => {
+        const crossMarried = S.unions.some(u => (u.a===p.id||u.b===p.id) &&
+          ((u.a===p.id ? (P(u.b)||{}).fid : (P(u.a)||{}).fid) !== p.fid));
+        const tgt = famTarget[p.fid] === undefined ? 0 : famTarget[p.fid];
+        const w = crossMarried ? 0.0015 : 0.010;
+        force[p.id] += (tgt - pos[p.id].x) * w;
+      });
+
+      people.forEach(p => {
+        pos[p.id].x += Math.max(-14, Math.min(14, force[p.id]) * 0.55);
+      });
+    }
+
+  }
+
+  // 节点
+  people.forEach(p => {
+    const fam = F(p.fid);
+    // 血缘混色：父母来自两个家族时，孩子的星色取两家色的中间色
+    const cols = [];
+    S.pc.forEach(e => {
+      if(e.c === p.id){
+        const q = P(e.p);
+        if(q){
+          const c = famColor(F(q.fid));
+          if(c && cols.indexOf(c) < 0) cols.push(c);
+        }
+      }
+    });
+    const own = famColor(fam);
+    if(!cols.length) cols.push(own);
+    const col = cols.length > 1 ? mixHex(cols[0], cols[1], 0.5) : cols[0];
+    const filled = [p.b, p.d, p.note, p.img].filter(Boolean).length;
+    const score = (p.b?1:0) + (p.d?1:0) + (p.note?1:0) + (p.img?1:0);
+    const conn = S.pc.filter(e => e.p===p.id||e.c===p.id).length
+               + S.unions.filter(u => u.a===p.id||u.b===p.id).length;
+    nodes.push({
+      id: p.id, kind:'person', x: pos[p.id].x, y: pos[p.id].y,
+      person: p, fam, hue: col, color: col, color2: cols.length > 1 ? cols[1] : null, rgb: rgbOf(col),
+      score: score / 4,
+      r: 4.6 + Math.min(4.4, Math.sqrt(conn) * 1.5),
+      claimed: !!p.claim,
+      isMe: p.id === S.me
+    });
+  });
+
+  // 婚姻枢纽
+  const hub = {};
+  S.unions.forEach(u => {
+    if(!u.a || !u.b || !pos[u.a] || !pos[u.b]) return;
+    const a = P(u.a), b = P(u.b);
+    const cross = a && b && a.fid !== b.fid;
+    hub[u.id] = {
+      id:'h_'+u.id, kind:'hub', x:(pos[u.a].x+pos[u.b].x)/2,
+      y:(pos[u.a].y+pos[u.b].y)/2 - 16, union:u, cross
+    };
+    nodes.push(hub[u.id]);
+  });
+
+  // 边：把能连的都连起来
+  const parentsOf = {};
+  S.pc.forEach(e => { (parentsOf[e.c] = parentsOf[e.c] || []).push(e.p); });
+  const nm = id => ((P(id) || {}).name || '');
+
+  Object.keys(parentsOf).forEach(cid => {
+    const ps = parentsOf[cid];
+    const u = S.unions.find(x => (x.a && x.b) &&
+      ((ps.includes(x.a) && ps.includes(x.b)) ||
+       (ps.includes(x.a) && ps.length===1) ||
+       (ps.includes(x.b) && ps.length===1)));
+    if(ps.length >= 2 && u && hub[u.id]){
+      edges.push({ type:'birth', from:hub[u.id].id, to:cid, p1:u.a, p2:u.b,
+        txt: nm(u.a) + '、' + nm(u.b) + ' → ' + nm(cid) + ' · 亲子' });
+    } else {
+      ps.forEach(pid => {
+        if(pos[pid]) edges.push({ type:'birth', from:pid, to:cid, p1:pid, p2:cid,
+          txt: nm(pid) + ' → ' + nm(cid) + ' · 亲子' });
+      });
+    }
+  });
+
+  S.unions.forEach(u => {
+    if(u.a && u.b && hub[u.id] && pos[u.a] && pos[u.b]){
+      const cross = (P(u.a)||{}).fid !== (P(u.b)||{}).fid;
+      edges.push({ type: cross ? 'bridge':'pair', from:u.a, to:u.b, hub:hub[u.id],
+        p1:u.a, p2:u.b,
+        txt: nm(u.a) + ' — ' + nm(u.b) + (cross ? ' · 两族联姻' : ' · 夫妻') });
+    }
+  });
+
+  // 同胞线：同一对父母的孩子彼此串起来
+  const kidsByPair = {};
+  S.pc.forEach(e => {
+    const ps = parentsOf[e.c];
+    if(!ps) return;
+    const key = ps.slice().sort().join('|');
+    (kidsByPair[key] = kidsByPair[key] || []).push(e.c);
+  });
+  Object.keys(kidsByPair).forEach(k => {
+    const kids = kidsByPair[k];
+    if(kids.length < 2) return;
+    for(let i = 0; i < kids.length - 1; i++){
+      const A = kids[i], B = kids[i + 1];
+      if(pos[A] && pos[B]){
+        edges.push({ type:'sib', from:A, to:B, p1:A, p2:B,
+          txt: nm(A) + ' — ' + nm(B) + ' · 同胞' });
+      }
+    }
+  });
+
+  fitBox = bounds();
+  refreshLabels();
+}
+
+/* 辐射布局：以某人为圆心，按关系远近一圈圈排开 */
+function radialPositions(v){
+  if(!v || !S) return null;
+  const adj = {};
+  const link = (a, b) => { if(!a || !b) return; (adj[a] = adj[a] || []).push(b); };
+  S.pc.forEach(e => { link(e.p, e.c); link(e.c, e.p); });
+  S.unions.forEach(u => { link(u.a, u.b); link(u.b, u.a); });
+  const d = {};
+  d[v] = 0;
+  const q0 = [v];
+  while(q0.length){
+    const c = q0.shift();
+    (adj[c] || []).forEach(x => { if(d[x] === undefined){ d[x] = d[c] + 1; q0.push(x); } });
+  }
+  let maxD = 0;
+  Object.keys(d).forEach(k => { maxD = Math.max(maxD, d[k]); });
+  const layers = {};
+  S.people.forEach(p => {
+    if(d[p.id] === undefined) d[p.id] = maxD + 1;
+    (layers[d[p.id]] = layers[d[p.id]] || []).push(p.id);
+  });
+
+  const out = {};
+  out[v] = { x: 0, y: 0 };
+  const ang = {};
+  const step = 172;
+
+  Object.keys(layers).map(Number).sort((a, b) => a - b).forEach(lv => {
+    if(lv === 0) return;
+    const list = layers[lv];
+    const rel = id => {
+      const ps = [];
+      S.pc.forEach(e => { if(e.c === id) ps.push(e.p); });
+      S.unions.forEach(u => { if(u.a === id) ps.push(u.b); else if(u.b === id) ps.push(u.a); });
+      let sx = 0, sy = 0, n = 0;
+      ps.forEach(x => {
+        if(ang[x] !== undefined){ sx += Math.cos(ang[x]); sy += Math.sin(ang[x]); n++; }
+        else if(out[x]){ sx += out[x].x; sy += out[x].y; n++; }
+      });
+      return n ? Math.atan2(sy / n, sx / n) : -Math.PI / 2;
+    };
+    const order = list.slice().sort((a, b) => rel(a) - rel(b));
+    const n = order.length;
+    const R = step * lv;
+    order.forEach((id, i) => {
+      const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+      ang[id] = a;
+      const rr = R + (i % 2 ? 24 : 0);
+      out[id] = { x: Math.cos(a) * rr, y: Math.sin(a) * rr * 0.82 };
+    });
+  });
+  return out;
+}
+
+function bounds(){
+  if(!nodes.length) return { x0:-200, x1:200, y0:-100, y1:100 };
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  nodes.forEach(n => {
+    x0=Math.min(x0,n.x-40); x1=Math.max(x1,n.x+40);
+    y0=Math.min(y0,n.y-30); y1=Math.max(y1,n.y+46);
+  });
+  return { x0, x1, y0, y1 };
+}
+
+function familyBoxes(){
+  if(!S || !S.fams) return [];
+  const out = [];
+  S.fams.forEach(f => {
+    const list = nodes.filter(n => n.kind==='person' && n.person.fid === f.id);
+    if(list.length < 2) return;
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    list.forEach(n => {
+      x0=Math.min(x0,n.x-52); x1=Math.max(x1,n.x+52);
+      y0=Math.min(y0,n.y-34); y1=Math.max(y1,n.y+50);
+    });
+    out.push({ fam:f, cx:(x0+x1)/2, cy:(y0+y1)/2, rx:Math.max(90,(x1-x0)/2+26), ry:Math.max(70,(y1-y0)/2+26) });
+  });
+  return out;
+}
+/* ============================================================
+   Part 3 · 星图渲染
+   ============================================================ */
+const cv = document.getElementById('sky');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- 相机：一个会呼吸的 3D 视角 ---------- */
+const cam = { yaw: 0.18, pitch: 0.34, dist: 1200, fov: 640, tx: 0, ty: 0 };
+let stars = [];
+let viewerId = null;
+let labelMap = {};
+let relDepth = {};
+
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = cv.clientWidth; H = cv.clientHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  buildStars();
+  if(fitBox) fitView();
+}
+
+function buildStars(){
+  stars = [];
+  let seed = 20261112;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  const n = Math.min(560, Math.round(W * H / 1600));
+  for(let i = 0; i < n; i++){
+    stars.push({
+      x: rnd() * W,
+      y: rnd() * H,
+      r: 0.35 + rnd() * rnd() * 1.7,
+      a: 0.08 + rnd() * 0.45,
+      w: rnd() < 0.55,
+      p: 0.25 + rnd() * 1.35
+    });
+  }
+}
+
+function fitView(){
+  const padT = 96, padB = 136, padX = 46;
+  const bw = Math.max(180, fitBox.x1 - fitBox.x0);
+  const bh = Math.max(180, fitBox.y1 - fitBox.y0);
+  cam.tx = (fitBox.x0 + fitBox.x1) / 2;
+  cam.ty = (fitBox.y0 + fitBox.y1) / 2;
+  cam.yaw = 0.18; cam.pitch = 0.34;
+  const wAvail = Math.max(140, W - padX * 2);
+  const hAvail = Math.max(140, H - padT - padB);
+  const need = Math.max(bw / wAvail, bh / hAvail);
+  cam.dist = Math.max(420, Math.min(5200, cam.fov * need * 1.12));
+  view.x = 0;
+  view.y = (padT - padB) / 2;
+}
+
+function project(x, y, z){
+  const dx = x - cam.tx, dy = y - cam.ty;
+  const cyw = Math.cos(cam.yaw), syw = Math.sin(cam.yaw);
+  const X = dx * cyw + z * syw;
+  const Z = -dx * syw + z * cyw;
+  const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  const Y = dy * cp - Z * sp;
+  const Z2 = dy * sp + Z * cp;
+  const d = Z2 + cam.dist;
+  if(d < 80) return null;
+  const s = cam.fov / d;
+  return { x: W / 2 + X * s + view.x, y: H / 2 + Y * s + view.y, s: s, d: d };
+}
+
+function hashStr(s){
+  let h = 0;
+  for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 9973;
+  return h;
+}
+
+/* 每个节点的景深：不同家族落在不同深度层，节点再散开一点 */
+function zOf(n){
+  if(n.__z !== undefined) return n.__z;
+  if(!S || !S.fams || !S.fams.length){ n.__z = 0; return 0; }
+  const mid = (S.fams.length - 1) / 2;
+  const fid = n.kind === 'hub' ? ((P(n.union.a) || {}).fid || S.fams[0].id) : n.person.fid;
+  const fi = Math.max(0, S.fams.findIndex(f => f.id === fid));
+  n.__z = (fi - mid) * 250 + ((hashStr(n.id) % 200) - 100);
+  return n.__z;
+}
+
+function visible(n){
+  if(!timelineOn) return true;
+  if(n.kind === 'hub') return true;
+  const b = n.person && n.person.b;
+  if(!b) return true;
+  return Number(b) <= yearLimit;
+}
+
+/* ---------- 以谁为中心：称呼与远近 ---------- */
+function refreshLabels(){
+  labelMap = {};
+  relDepth = {};
+  if(!S || !S.people.length) return;
+  if(viewerId && !S.people.some(p => p.id === viewerId)) viewerId = null;
+  const v = viewerId || S.me;
+  if(!v) return;
+  const adj = {};
+  const push = (a, b) => { (adj[a] = adj[a] || []).push(b); };
+  S.pc.forEach(e => { push(e.p, e.c); push(e.c, e.p); });
+  S.unions.forEach(u => { push(u.a, u.b); push(u.b, u.a); });
+  const q = [v];
+  relDepth[v] = 0;
+  while(q.length){
+    const c = q.shift();
+    (adj[c] || []).forEach(x => {
+      if(relDepth[x] === undefined){ relDepth[x] = relDepth[c] + 1; q.push(x); }
+    });
+  }
+  S.people.forEach(p => {
+    labelMap[p.id] = (p.id === v) ? (LANG === 'en' ? 'Me' : '我') : kinTermL(v, p.id);
+  });
+}
+
+function drawEdge(ax, ay, bx, by, color, width, dashed, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash(dashed ? [4, 6] : []);
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(bx, by);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* ---------- 主渲染 ---------- */
+function render(t){
+  const time = reduceMotion ? 0 : t * 0.001;
+  if(spinHold > 0) spinHold -= 1 / 60;
+  else if(!reduceMotion) cam.yaw += 0.0011;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const bg = ctx.createRadialGradient(W * 0.44, H * 0.4, 0, W * 0.44, H * 0.4, Math.max(W, H) * 0.95);
+  bg.addColorStop(0, '#111823');
+  bg.addColorStop(0.4, '#080C13');
+  bg.addColorStop(1, '#03040A');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  for(let i = 0; i < stars.length; i++){
+    const st = stars[i];
+    let px = st.x - cam.yaw * st.p * 200;
+    let py = st.y - cam.pitch * st.p * 160;
+    px = ((px % W) + W) % W;
+    py = ((py % H) + H) % H;
+    ctx.globalAlpha = st.a;
+    ctx.fillStyle = st.w ? '#E9D6B2' : '#AEC0DE';
+    ctx.beginPath(); ctx.arc(px, py, st.r, 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  const pj = {};
+  nodes.forEach(n => { if(visible(n)) pj[n.id] = project(n.x, n.y, zOf(n)); });
+
+  const vId = viewerId || (S && S.me);
+  const fadeOf = id => {
+    if(!vId || !id) return 1;
+    if(id === vId) return 1;
+    const rd = relDepth[id];
+    if(rd === undefined) return 0.34;
+    if(rd === 1) return 0.96;
+    if(rd === 2) return 0.8;
+    if(rd === 3) return 0.62;
+    return 0.44;
+  };
+
+  familyBoxes().forEach(b => {
+    const c = rgbOf(famColor(b.fam));
+    const p0 = project(b.cx, b.cy, 0);
+    if(!p0) return;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(' + c + ',.13)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 10]);
+    ctx.beginPath();
+    ctx.ellipse(p0.x, p0.y, b.rx * p0.s * 1.1, b.ry * p0.s * 0.9, 0, 0, 6.283);
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  edges.forEach(e => {
+    const a = pj[e.from], b = pj[e.to];
+    if(!a || !b) return;
+    const fog = Math.max(0.1, Math.min(1, (2600 - (a.d + b.d) / 2) / 1600));
+    const na = nodes.find(n => n.id === e.from);
+    const nb = nodes.find(n => n.id === e.to);
+    const cA = (na && na.color) || '#D9A75E';
+    const cB = (nb && nb.color) || cA;
+
+    if(e.type === 'bridge'){
+      const h = pj['h_' + e.hub.union.id];
+      const mx = h ? h.x : (a.x + b.x) / 2;
+      const my = h ? h.y : (a.y + b.y) / 2;
+      const soft = e.hub && e.hub.union.link === 'soft';
+      const wd = (soft ? 1 : 1.9) * Math.min(1.8, Math.max(0.8, a.s * 1.5));
+      drawEdge(a.x, a.y, mx, my, cA, wd, soft, fog * (soft ? 0.55 : 0.86));
+      drawEdge(mx, my, b.x, b.y, cB, wd, soft, fog * (soft ? 0.55 : 0.86));
+    } else if(e.type === 'birth'){
+      drawEdge(a.x, a.y, b.x, b.y, cB, Math.min(1.5, Math.max(0.65, a.s * 1.1)), false, fog * 0.45);
+    } else if(e.type === 'sib'){
+      drawEdge(a.x, a.y, b.x, b.y, cA, 1, true, fog * 0.2);
+    } else {
+      const h = pj['h_' + (e.hub ? e.hub.union.id : '')];
+      const mx = h ? h.x : (a.x + b.x) / 2;
+      const my = h ? h.y : (a.y + b.y) / 2;
+      drawEdge(a.x, a.y, mx, my, cA, Math.min(1.4, Math.max(0.65, a.s * 1.2)), false, fog * 0.55);
+      drawEdge(mx, my, b.x, b.y, cB, Math.min(1.4, Math.max(0.65, b.s * 1.2)), false, fog * 0.55);
+    }
+  });
+
+  const order = nodes.filter(n => pj[n.id]).sort((x, y) => pj[y.id].d - pj[x.id].d);
+
+  order.forEach(n => {
+    const p = pj[n.id];
+    const fog = Math.max(0.12, Math.min(1, (2500 - p.d) / 1400));
+
+    if(n.kind === 'hub'){
+      const ua = P(n.union.a), ub = P(n.union.b);
+      const hc = (ua && ub && ua.fid !== ub.fid)
+        ? mixHex(famColor(F(ua.fid)), famColor(F(ub.fid)), 0.5)
+        : famColor(ua ? F(ua.fid) : null);
+      const hrgb = rgbOf(hc);
+      const pulse = reduceMotion ? 0 : (Math.sin(time * 1.1 + n.x * 0.01) * 0.5 + 0.5);
+      const rr = Math.max(2, 11 * p.s);
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rr * 3.4);
+      g.addColorStop(0, 'rgba(' + hrgb + ',' + (0.5 + pulse * 0.2) * fog + ')');
+      g.addColorStop(1, 'rgba(' + hrgb + ',0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, rr * 3.4, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = 'rgba(' + hrgb + ',' + 0.7 * fog + ')';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 6.283); ctx.stroke();
+      return;
+    }
+
+    const fa = fadeOf(n.person.id);
+    const tw = reduceMotion ? 1 : (0.9 + Math.sin(time * 0.7 + n.x * 0.03 + n.y * 0.05) * 0.1);
+    const bright = 0.24 + n.score * 0.72;
+    const rgb = n.rgb || '217,167,94';
+    const nr = Math.max(1.2, n.r * 2.3 * p.s);
+
+    const gr = Math.max(7, nr * 4.6);
+    // 联姻后代：第二支血缘在光晕另一侧亮起来
+    if(n.color2){
+      const r2 = rgbOf(n.color2);
+      const g2 = ctx.createRadialGradient(p.x - nr * 1.1, p.y, 0, p.x - nr * 1.1, p.y, gr * 0.95);
+      g2.addColorStop(0, 'rgba(' + r2 + ',' + (0.34 * bright * fog * fa) + ')');
+      g2.addColorStop(1, 'rgba(' + r2 + ',0)');
+      ctx.fillStyle = g2;
+      ctx.beginPath(); ctx.arc(p.x - nr * 1.1, p.y, gr * 0.95, 0, 6.283); ctx.fill();
+    }
+    const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, gr);
+    g.addColorStop(0, 'rgba(' + rgb + ',' + (0.42 * bright * tw * fog * fa) + ')');
+    g.addColorStop(0.42, 'rgba(' + rgb + ',' + (0.13 * bright * fog * fa) + ')');
+    g.addColorStop(1, 'rgba(' + rgb + ',0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(p.x, p.y, gr, 0, 6.283); ctx.fill();
+
+    if(n.claimed){
+      ctx.fillStyle = 'rgba(' + rgb + ',' + ((0.55 + n.score * 0.4) * fog * fa) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, nr, 0, 6.283); ctx.fill();
+      ctx.fillStyle = 'rgba(255,246,228,' + ((0.5 + n.score * 0.5) * fog) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, nr * 0.42, 0, 6.283); ctx.fill();
+    } else {
+      ctx.strokeStyle = 'rgba(' + rgb + ',' + (0.6 * fog * fa) + ')';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, nr, 0, 6.283); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,246,228,' + (0.16 * fog) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, nr * 0.24, 0, 6.283); ctx.fill();
+    }
+
+    if(n.person.id === vId){
+      const rr2 = nr + 6 + (reduceMotion ? 0 : Math.sin(time * 1.4) * 1.6);
+      ctx.strokeStyle = 'rgba(242,217,168,.6)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(p.x, p.y, rr2, 0, 6.283); ctx.stroke();
+      ctx.strokeStyle = 'rgba(242,217,168,.2)';
+      ctx.beginPath(); ctx.arc(p.x, p.y, rr2 + 7, 0, 6.283); ctx.stroke();
+    }
+
+    if(selected && selected.id === n.id){
+      ctx.strokeStyle = 'rgba(242,217,168,.9)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(p.x, p.y, nr + 9, 0, 6.283); ctx.stroke();
+    } else if(hovered && hovered.id === n.id){
+      ctx.strokeStyle = 'rgba(255,246,228,.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(p.x, p.y, nr + 6, 0, 6.283); ctx.stroke();
+    }
+  });
+
+  /* 标签：名字 + 相对称呼 */
+  const placed = [];
+  const font = getComputedStyle(document.body).fontFamily;
+  order.forEach(n => {
+    if(n.kind === 'hub') return;
+    const p = pj[n.id];
+    const isSel = selected && selected.id === n.id;
+    if(p.s < 0.42 && !isSel) return;
+    if(!n.claimed && p.s < 0.6 && !isSel) return;
+
+    const name = n.person.name;
+    const term = labelMap[n.person.id] || '';
+    ctx.font = '500 12px ' + font;
+    const w1 = ctx.measureText(name).width;
+    const w2 = term ? ctx.measureText(' · ' + term).width : 0;
+    const tw2 = w1 + w2;
+    const lx = p.x - tw2 / 2;
+    const ly = p.y + Math.max(12, n.r * 2.3 * p.s) + 16;
+    const box = { x: lx - 3, y: ly - 12, w: tw2 + 6, h: 16 };
+    const clash = placed.some(b => !(box.x > b.x + b.w || box.x + box.w < b.x || box.y > b.y + b.h || box.y + box.h < b.y));
+    if(clash && !isSel) return;
+    placed.push(box);
+
+    ctx.save();
+    ctx.globalAlpha = isSel ? 1 : Math.max(0.3, Math.min(0.96, p.s * 1.1)) * (n.claimed ? 1 : 0.68);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = n.person.id === vId ? '#F6E4BE' : liftHex(n.color || '#D9A75E', 0.6);
+    ctx.fillText(name, lx, ly);
+    if(term){
+      ctx.fillStyle = 'rgba(169,169,159,.9)';
+      ctx.fillText(' · ' + term, lx + w1, ly);
+    }
+    ctx.restore();
+  });
+
+  const sNow = cam.fov / cam.dist;
+  const LV = LANG === 'en' ? ['Cosmos', 'Galaxy', 'Constellation', 'Person'] : ['宇宙', '星系', '星座', '个人'];
+  const lvl = sNow < 0.42 ? LV[0] : sNow < 0.75 ? LV[1] : sNow < 1.2 ? LV[2] : LV[3];
+  ctx.save();
+  ctx.font = '500 11px ' + font;
+  ctx.fillStyle = 'rgba(168,167,156,.45)';
+  ctx.fillText(lvl, 22, H - 110);
+  ctx.fillText(Math.round(sNow * 100) + '%', 22, H - 94);
+  ctx.restore();
+
+  requestAnimationFrame(render);
+}
+
+/* 命中检测：按屏幕投影算 */
+function hit(x, y){
+  let best = null, bestD = 1e9;
+  nodes.forEach(n => {
+    if(!visible(n)) return;
+    const p = project(n.x, n.y, zOf(n));
+    if(!p) return;
+    const d = Math.hypot(p.x - x, p.y - y);
+    const rr = Math.max(20, n.r * 2.3 * p.s + 10);
+    if(d < rr && d < bestD){ best = n; bestD = d; }
+  });
+  return best;
+}
+
+/* ============================================================
+   Part 4 · 面板、星卡、表单
+   ============================================================ */
+const maskEl = document.getElementById('mask');
+const sheetEl = document.getElementById('sheet');
+let sheetCloseHandler = null;
+
+function toast(msg, ms){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('on'), ms || 2000);
+}
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sheet(opt){
+  const mask = maskEl, s = sheetEl;
+  s.innerHTML =
+    '<div class="sheet-head">' +
+      '<div><div class="sheet-title">' + esc(opt.title) + '</div>' +
+      (opt.desc ? '<div class="sheet-desc">' + opt.desc + '</div>' : '') + '</div>' +
+      '<button class="icon-btn" data-close aria-label="关闭" style="width:32px;height:32px;border-color:#1A1F28">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+      '</button>' +
+    '</div>' +
+    '<div class="sheet-body">' + (opt.body || '') + '</div>' +
+    (opt.foot ? '<div class="sheet-foot">' + opt.foot + '</div>' : '');
+  mask.classList.add('on');
+  s.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheet);
+  if(opt.mount) opt.mount(s);
+  sheetCloseHandler = opt.onClose || null;
+}
+function closeSheet(){
+  maskEl.classList.remove('on');
+  if(sheetCloseHandler){ const f = sheetCloseHandler; sheetCloseHandler = null; f(); }
+}
+maskEl.addEventListener('click', e => { if(e.target === maskEl) closeSheet(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeSheet(); hideCard(); } });
+
+/* ---------- 通用表单 ---------- */
+function personFields(v){
+  v = v || {};
+  return (
+    '<div class="field"><label>姓名</label><input data-key="name" value="' + esc(v.name||'') + '" placeholder="只填一个名字也可以"></div>' +
+    '<div class="field"><label>性别</label><div class="seg" data-seg="sex">' +
+      '<button type="button" data-v="m" class="' + ((v.sex||'m')==='m'?'on':'') + '">男</button>' +
+      '<button type="button" data-v="f" class="' + (v.sex==='f'?'on':'') + '">女</button>' +
+    '</div></div>' +
+    '<div class="field-row">' +
+      '<div class="field"><label>出生年</label><input data-key="b" inputmode="numeric" value="' + esc(v.b||'') + '" placeholder="如 1958"></div>' +
+      '<div class="field"><label>离世年</label><input data-key="d" inputmode="numeric" value="' + esc(v.d||'') + '" placeholder="留空表示在世"></div>' +
+    '</div>' +
+    '<div class="field"><label>一句话</label><textarea data-key="note" placeholder="他做过什么、爱吃什么、你最记得他哪件事">' + esc(v.note||'') + '</textarea></div>' +
+    '<div class="field"><label>谁能看见</label><div class="seg" data-seg="privacy">' +
+      '<button type="button" data-v="family" class="' + ((v.privacy||'blood')==='family'?'on':'') + '">家族可见</button>' +
+      '<button type="button" data-v="blood" class="' + ((v.privacy||'blood')==='blood'?'on':'') + '">仅血缘</button>' +
+      '<button type="button" data-v="self" class="' + (v.privacy==='self'?'on':'') + '">仅本人</button>' +
+    '</div></div>' +
+    '<p class="hint" style="margin:-10px 0 0">手机号、住址、病史这类字段不进默认字段集，只能本人认领后自己开。</p>'
+  );
+}
+function bindSegs(root){
+  root.querySelectorAll('[data-seg]').forEach(seg => {
+    seg.querySelectorAll('button').forEach(b => {
+      b.onclick = () => {
+        seg.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+        b.classList.add('on'); seg.dataset.value = b.dataset.v;
+      };
+    });
+    seg.dataset.value = (seg.querySelector('button.on') || {}).dataset ? seg.querySelector('button.on').dataset.v : 'm';
+  });
+}
+function readForm(root){
+  const out = {};
+  root.querySelectorAll('[data-key]').forEach(el => out[el.dataset.key] = el.value.trim());
+  root.querySelectorAll('[data-seg]').forEach(seg => out[seg.dataset.seg] = seg.dataset.value || 'm');
+  return out;
+}
+
+/* ---------- 关系写入 ---------- */
+function spouseOf(id){
+  const u = S.unions.find(x => (x.a === id || x.b === id));
+  if(!u) return null;
+  return u.a === id ? u.b : u.a;
+}
+function unionBetween(a, b){
+  return S.unions.find(u => (u.a===a && u.b===b) || (u.a===b && u.b===a));
+}
+function ensureUnion(a, b){
+  if(!a || !b || a === b) return null;
+  const ex = unionBetween(a, b);
+  if(ex) return ex;
+  const u = { id: uid('u'), a: a, b: b, year:'', link:'hard', agree:{} };
+  S.unions.push(u);
+  /* 单亲补全：一方已经有孩子、另一方还没有任何孩子时，
+     把已有孩子同时挂到新配偶名下，否则"外公的配偶"会变成没有血缘的旁支 */
+  const adopt = (from, to) => {
+    if(S.pc.some(e => e.p === to)) return;
+    S.pc.filter(e => e.p === from).forEach(e => {
+      if(!S.pc.some(x => x.p === to && x.c === e.c)) S.pc.push({ p: to, c: e.c, kind:'blood' });
+    });
+  };
+  adopt(a, b);
+  adopt(b, a);
+  return u;
+}
+
+function commitPerson(data, anchorId, role){
+  const anchor = anchorId ? P(anchorId) : null;
+  const fid = anchor ? anchor.fid : (S.me ? P(S.me).fid : (S.fams[0] && S.fams[0].id));
+  const p = {
+    id: uid('p'), fid: fid, name: data.name || '未命名', sex: data.sex || 'm',
+    b: data.b || '', d: data.d || '', note: data.note || '', img: '',
+    claim: true, claimAt: Date.now(), privacy: data.privacy || 'blood'
+  };
+  S.people.push(p);
+
+  if(role === 'father' || role === 'mother'){
+    S.pc.push({ p: p.id, c: anchorId, kind:'blood' });
+    const others = S.pc.filter(e => e.c === anchorId).map(e => e.p);
+    if(others.length >= 2) ensureUnion(others[0], others[1]);
+  } else if(role === 'spouse'){
+    ensureUnion(anchorId, p.id);
+  } else if(role === 'child'){
+    S.pc.push({ p: anchorId, c: p.id, kind:'blood' });
+    const sp = spouseOf(anchorId);
+    if(sp && P(sp)){ S.pc.push({ p: sp, c: p.id, kind:'blood' }); ensureUnion(anchorId, sp); }
+  } else if(role === 'sibling'){
+    const par = S.pc.filter(e => e.c === anchorId).map(e => e.p);
+    par.forEach(pid => S.pc.push({ p: pid, c: p.id, kind:'blood' }));
+  }
+  buildGraph(); save();
+  return p;
+}
+
+/* ---------- 添加流程 ---------- */
+const REL_LABEL = {
+  father:{ t:'添加父亲', d:'他属于你父母那一支。只需一个名字就能先挂上去。' },
+  mother:{ t:'添加母亲', d:'她来自另一个家族——她的那一支会是图上另一个分支。' },
+  spouse:{ t:'添加配偶', d:'婚姻会成为图上的一个枢纽节点，也是连接两个家族的接口。' },
+  child:{ t:'添加子女', d:'孩子挂在父母的婚姻枢纽下面，父系母系天然等权。' },
+  sibling:{ t:'添加兄弟姐妹', d:'同父母，但各自会有自己的分支。' },
+  free:{ t:'添加一位家人', d:'先挂在这一代，之后再补关系也可以。' }
+};
+
+function addRelation(anchorNode, role){
+  const anchorId = anchorNode ? anchorNode.id : null;
+  const meta = REL_LABEL[role] || REL_LABEL.free;
+  const v = {};
+  if(role === 'father' || role === 'mother') v.sex = role === 'father' ? 'm' : 'f';
+  if(role === 'sibling' && anchorNode) v.sex = anchorNode.person.sex === 'm' ? 'f' : 'm';
+
+  sheet({
+    title: meta.t, desc: meta.d,
+    body: personFields(v),
+    foot: '<button class="btn wide" data-close>取消</button><button class="btn gold wide" id="doAdd">挂上去</button>',
+    mount(root){
+      bindSegs(root);
+      const nameEl = root.querySelector('[data-key="name"]');
+      setTimeout(() => nameEl && nameEl.focus(), 80);
+      root.querySelector('#doAdd').onclick = () => {
+        const data = readForm(root);
+        if(!data.name){ toast('至少填一个名字'); nameEl.focus(); return; }
+        const go = () => {
+          commitPerson(data, anchorId, role);
+          closeSheet(); hideCard();
+          toast('已挂上「' + data.name + '」，星图重排中');
+        };
+        const dup = sameSpot(anchorId, role, data.name);
+        if(dup){ closeSheet(); askSame(dup, go); return; }
+        go();
+      };
+    }
+  });
+}
+
+/* ---------- 星卡 ---------- */
+const cardEl = document.getElementById('card');
+let guestView = false;
+const PV_LABEL = { family:'家族可见', blood:'仅血缘可见', self:'仅本人可见' };
+function hideCard(){
+  selected = null;
+  guestView = false;
+  cardEl.classList.remove('on');
+  setTimeout(() => { if(!selected) cardEl.innerHTML = ''; }, 220);
+}
+function showCard(node){
+  if(node.kind === 'hub'){ node = nodes.find(n => n.id === node.union.a) || null; if(!node) return; }
+  selected = node;
+  const p = node.person;
+  const v = viewerId || S.me;
+  const term = (p.id === v) ? (LANG === 'en' ? 'center of this view' : '这个视角的中心') : kinTermL(v, p.id);
+  const names = pathNames(v, p.id).map(id => { const q = P(id); return q ? q.name : ''; }).filter(Boolean);
+  const pathStr = names.length > 1 ? names.join(' → ') : '';
+  const pv = p.privacy || 'blood';
+  const masked = guestView && pv !== 'family';
+  const years = (masked && pv === 'self') ? '不对外公开' : ((p.b || p.d) ? ((p.b || '?') + ' — ' + (p.d || (LANG === 'en' ? 'present' : '今'))) : '生卒未补');
+  const initial = p.name ? p.name.slice(-1) : '?';
+  const filled = [p.b, p.d, p.note].filter(Boolean).length;
+  const dups = dupCandidatesFor(p.id);
+  const dupBlock = dups.length ? (
+    '<div class="card-dup"><div class="dup-title">图上可能是同一颗星，点一下就合并</div>' +
+    dups.map(d => '<div class="dup-row"><span class="dup-name">「' + esc(d.name) + '」</span>' +
+      '<span class="dup-why">' + esc(d.why) + '</span>' +
+      '<button class="dup-go" data-merge="' + d.id + '">合并</button></div>').join('') +
+    '</div>') : '';
+
+  cardEl.innerHTML =
+    '<button class="card-close" data-x aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+    '<div class="card-top">' +
+      '<div class="avatar">' + (p.img ? '<img src="' + p.img + '" alt="">' : esc(initial)) + '</div>' +
+      '<div style="min-width:0">' +
+        '<div class="card-name">' + esc(p.name) + '</div>' +
+        '<div class="card-meta">' + esc(term) + ' · ' + years + ' · ' + esc((F(p.fid)||{}).name||'') + '</div>' +
+        '<div class="card-meta" style="color:' + (p.claim ? 'var(--gold)' : 'var(--dim)') + '">' +
+          (p.claim ? (LANG === 'en' ? 'Claimed' : '已认领') : (LANG === 'en' ? 'Unclaimed' : '待认领的暗星')) + ' · ' + (LANG === 'en' ? 'details ' : '资料 ') + filled + '/3 · ' + (LANG === 'en' ? {family:'family-visible', blood:'bloodline only', self:'only me'}[pv] : PV_LABEL[pv]) + '</div>' +
+      '</div>' +
+    '</div>' +
+    (pathStr ? '<div class="card-path"><span class="k">关系路径</span>' + esc(pathStr) + '</div>' : '') +
+    dupBlock +
+    (p.note && !masked ? '<div class="card-note">' + esc(p.note) + '</div>' : '') +
+    (masked ? '<div class="card-note" style="color:var(--dim);font-style:normal">简介按「' + PV_LABEL[pv] + '」隐藏了</div>' : '') +
+    '<div class="card-acts">' +
+      (p.id !== S.me ? '<button class="mini" data-rel="father">添加父亲</button><button class="mini" data-rel="mother">添加母亲</button>' : '') +
+      '<button class="mini" data-rel="spouse">添加配偶</button>' +
+      '<button class="mini" data-rel="child">添加子女</button>' +
+      '<button class="mini gold" data-edit>补充资料</button>' +
+      '<button class="mini" data-share>把 TA 邀请进来</button>' +
+      (p.id !== (viewerId || S.me) ? '<button class="mini gold" data-focus>以 TA 为中心</button>' : '') +
+      '<button class="mini" data-guest>' + (guestView ? '回到我的视角' : '访客视角') + '</button>' +
+    '</div>';
+
+  cardEl.classList.add('on');
+  cardEl.querySelector('[data-x]').onclick = hideCard;
+  cardEl.querySelectorAll('[data-rel]').forEach(b => {
+    b.onclick = () => addRelation(node, b.dataset.rel);
+  });
+  cardEl.querySelector('[data-edit]').onclick = () => editPerson(p.id);
+  cardEl.querySelector('[data-share]').onclick = () => inviteFor(p.id);
+  const fbtn = cardEl.querySelector('[data-focus]');
+  if(fbtn) fbtn.onclick = () => setViewer(p.id);
+  cardEl.querySelector('[data-guest]').onclick = () => { guestView = !guestView; showCard(node); };
+  cardEl.querySelectorAll('[data-merge]').forEach(b => {
+    b.onclick = () => mergeInto(p.id, b.dataset.merge);
+  });
+}
+
+/* 录入时发现同名：只确认一次，是同一人就跳到那颗星，不是才新增 */
+function askSame(dup, goNew){
+  sheet({
+    title: '图上已经有一个「' + dup.name + '」',
+    desc: 'TA 已经在这个位置上。是同一个人吗？',
+    body: '<p class="hint">是同一个人的话，点左边直接去补 TA 的资料，不用再加一颗星。</p>',
+    foot: '<button class="btn wide" id="again">不是，另加一颗</button><button class="btn gold wide" id="ok">是同一人</button>',
+    mount(root){
+      root.querySelector('#ok').onclick = () => {
+        closeSheet();
+        const n = nodes.find(x => x.id === dup.id);
+        if(n) showCard(n); else toast('那颗星不见了');
+      };
+      root.querySelector('#again').onclick = () => { closeSheet(); goNew(); };
+    }
+  });
+}
+
+/* 把另一颗星并进来：谁的信息全就留谁，用户不用选主次 */
+function mergeInto(keepId, otherId){
+  const other = P(otherId), keep = P(keepId);
+  if(!other || !keep) return;
+  if(!confirm('把「' + other.name + '」并进「' + keep.name + '」？资料和关系会合成一份，不能撤销。')) return;
+  const r = mergePeople(keepId, otherId);
+  if(!r) return;
+  buildGraph(); save(); updateHud();
+  const n = nodes.find(x => x.id === r.keepId);
+  if(n) showCard(n);
+  toast('已经合成一颗星');
+}
+
+function editPerson(id){
+  const p = P(id);
+  if(!p) return;
+  sheet({
+    title:'补充「' + p.name + '」',
+    desc:'资料越全，这颗星越亮。填不出来的空着就行。',
+    body: personFields(p) + '<p class="hint">这一份只保存在本机，不会自动同步给别人。</p>',
+    foot:'<button class="btn wide" data-close>取消</button><button class="btn gold wide" id="doSave">保存</button>',
+    mount(root){
+      bindSegs(root);
+      root.querySelector('#doSave').onclick = () => {
+        const d = readForm(root);
+        if(d.name) p.name = d.name;
+        p.sex = d.sex; p.b = d.b; p.d = d.d; p.note = d.note;
+        p.privacy = d.privacy || 'blood';
+        p.claim = true;
+        buildGraph(); save(); closeSheet();
+        const n = nodes.find(x => x.id === p.id);
+        if(n) showCard(n);
+        toast('「' + p.name + '」又亮了一点');
+      };
+    }
+  });
+}
+/* ============================================================
+   Part 5 · 邀请 / 联姻 / 家族 / 数据
+   ============================================================ */
+
+function newCode(){
+  const chars = 'ACDEFGHJKLMNPQRSTUVWXY3457';
+  let out = '';
+  for(let i = 0; i < 5; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+function updateHud(){
+  if(!S) return;
+  const myFam = S.me ? F((P(S.me) || {}).fid) : S.fams[0];
+  document.getElementById('famName').textContent = myFam ? myFam.name : (LANG === 'en' ? 'My family' : '我的家族');
+  const total = S.people.length;
+  const lit = S.people.filter(p => p.claim && [p.b, p.d, p.note].filter(Boolean).length >= 1).length;
+  document.getElementById('famSub').innerHTML = LANG === 'en'
+    ? (total + ' stars · <b>' + lit + '</b> lit')
+    : (total + ' 颗星 · 已点亮 <b>' + lit + '</b>');
+  const vp = P(viewerId || S.me);
+  const vEl = document.getElementById('btnViewer');
+  if(vEl && vp) vEl.textContent = (LANG === 'en' ? 'View · ' : '视角 · ') + (vp.name || (LANG === 'en' ? 'Me' : '我'));
+}
+
+/* ---------- 视角：以谁为中心 ---------- */
+function centerOn(id){
+  const n = nodes.find(x => x.id === id);
+  if(!n) return;
+  cam.tx = n.x;
+  cam.ty = n.y;
+  if(cam.dist > 2100) cam.dist = 1500;
+}
+
+function setViewer(id){
+  if(!id) return;
+  viewerId = id;
+  buildGraph();
+  if(layoutMode === 'radial') fitView(); else centerOn(id);
+  updateHud();
+  const n = nodes.find(x => x.id === id);
+  if(n) showCard(n);
+  toast('现在以「' + ((P(id) || {}).name || '') + '」为中心');
+}
+
+function viewerSheet(){
+  const cur = viewerId || S.me;
+  const rows = S.people.map(p => {
+    const on = p.id === cur;
+    const back = kinTermL(p.id, cur);
+    return '<div class="row" data-view="' + p.id + '">' +
+      '<span class="dotmark" style="background:' + (p.claim ? famColor(F(p.fid)) : 'transparent') + ';border:1px solid ' + famColor(F(p.fid)) + '"></span>' +
+      '<div class="row-main"><div class="row-title">' + esc(p.name) + '</div>' +
+      '<div class="row-sub">' + (on
+        ? (LANG === 'en' ? 'This view is centered here' : '现在以 TA 为中心')
+        : (LANG === 'en'
+            ? ('You in their eyes · ' + esc(back || 'not linked'))
+            : ('TA 眼里的你 · ' + esc(back || '还没连上')))) + '</div></div>' +
+      '<span style="font-size:12px;color:' + (on ? 'var(--gold)' : 'var(--dim)') + '">' + (on ? '当前' : '切换') + '</span></div>';
+  }).join('');
+
+  sheet({
+    title:'换个视角看',
+    desc:'称呼是相对的。以谁为中心，整张网就按谁的眼睛重排一次。',
+    body:'<div class="list">' + rows + '</div>' +
+      '<p class="hint">被分享的人打开时，会以自己的身份为中心——同一张图，两套叫法。</p>',
+    foot:'<button class="btn wide" data-close>关闭</button><button class="btn gold wide" id="backMe">回到我自己</button>',
+    mount(root){
+      root.querySelectorAll('[data-view]').forEach(el => {
+        el.onclick = () => { closeSheet(); setViewer(el.dataset.view); };
+      });
+      root.querySelector('#backMe').onclick = () => { closeSheet(); setViewer(S.me); };
+    }
+  });
+}
+
+/* ---------- 分享卡 ---------- */
+function paintMini(g, x0, y0, w, h){
+  const b = bounds();
+  const bw = Math.max(120, b.x1 - b.x0), bh = Math.max(120, b.y1 - b.y0);
+  const k = Math.min(w / bw, h / bh) * 0.9;
+  const ox = x0 + w / 2 - ((b.x0 + b.x1) / 2) * k;
+  const oy = y0 + h / 2 - ((b.y0 + b.y1) / 2) * k;
+
+  edges.forEach(e => {
+    const a = nodes.find(n => n.id === e.from), c = nodes.find(n => n.id === e.to);
+    if(!a || !c) return;
+    const col = e.type === 'bridge' ? '#F2D9A8' : (e.type === 'pair' ? '#9C8763' : (c.hue || '#D9A75E'));
+    g.strokeStyle = col;
+    g.globalAlpha = e.type === 'birth' ? 0.42 : 0.7;
+    g.lineWidth = e.type === 'bridge' ? 2.4 : 1.4;
+    g.beginPath();
+    g.moveTo(a.x * k + ox, a.y * k + oy);
+    g.lineTo(c.x * k + ox, c.y * k + oy);
+    g.stroke();
+  });
+
+  nodes.forEach(n => {
+    const px = n.x * k + ox, py = n.y * k + oy;
+    if(n.kind === 'hub'){
+      g.globalAlpha = 1;
+      g.strokeStyle = n.cross ? '#F2D9A8' : 'rgba(217,167,94,.75)';
+      g.lineWidth = n.cross ? 2 : 1.4;
+      g.beginPath(); g.arc(px, py, n.cross ? 7 : 5, 0, 6.283); g.stroke();
+      g.fillStyle = 'rgba(255,240,214,.9)';
+      g.beginPath(); g.arc(px, py, 2.4, 0, 6.283); g.fill();
+      return;
+    }
+    const rgb = n.rgb || '217,167,94';
+    const bright = 0.3 + n.score * 0.7;
+    const r = Math.max(6, n.r * Math.min(2, k / 1.2));
+    const rg = g.createRadialGradient(px, py, 0, px, py, r * 4.5);
+    rg.addColorStop(0, 'rgba(' + rgb + ',' + (0.42 * bright) + ')');
+    rg.addColorStop(1, 'rgba(' + rgb + ',0)');
+    g.globalAlpha = 1;
+    g.fillStyle = rg;
+    g.beginPath(); g.arc(px, py, r * 4.5, 0, 6.283); g.fill();
+    if(n.claimed){
+      g.fillStyle = 'rgba(' + rgb + ',' + (0.6 + n.score * 0.3) + ')';
+      g.beginPath(); g.arc(px, py, r, 0, 6.283); g.fill();
+      g.fillStyle = 'rgba(255,246,228,.95)';
+      g.beginPath(); g.arc(px, py, r * 0.4, 0, 6.283); g.fill();
+    } else {
+      g.strokeStyle = 'rgba(' + rgb + ',.55)';
+      g.lineWidth = 1.2;
+      g.beginPath(); g.arc(px, py, r, 0, 6.283); g.stroke();
+    }
+  });
+  g.globalAlpha = 1;
+}
+
+function makeShareCard(code, targetId, sentence){
+  const w = 1080, h = 1350;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+
+  const rg = g.createRadialGradient(w * 0.5, h * 0.42, 0, w * 0.5, h * 0.42, w * 0.82);
+  rg.addColorStop(0, '#121722');
+  rg.addColorStop(0.5, '#080B11');
+  rg.addColorStop(1, '#04050A');
+  g.fillStyle = rg; g.fillRect(0, 0, w, h);
+
+  let seed = 77;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  for(let i = 0; i < 420; i++){
+    g.globalAlpha = 0.1 + rnd() * 0.4;
+    g.fillStyle = rnd() < 0.5 ? '#E9D6B2' : '#AEC0DE';
+    g.beginPath(); g.arc(rnd() * w, rnd() * h, 0.6 + rnd() * 1.4, 0, 6.283); g.fill();
+  }
+  g.globalAlpha = 1;
+
+  const fam = S.me ? F((P(S.me) || {}).fid) : S.fams[0];
+  g.textAlign = 'left';
+  g.fillStyle = 'rgba(217,167,94,.9)';
+  g.font = '600 22px ' + getComputedStyle(document.body).fontFamily;
+  g.fillText(LANG === 'en' ? 'X I N G Y I' : '星  裔', 84, 130);
+
+  g.fillStyle = '#EDE6D8';
+  g.font = '600 74px "Songti SC","Noto Serif CJK SC",serif';
+  g.fillText((fam ? fam.name : (LANG === 'en' ? 'My family' : '我的家族')) + (LANG === 'en' ? "'s star map" : '的星图'), 84, 226);
+
+  const total = S.people.length;
+  const dim = S.people.filter(p => !p.claim).length;
+  g.fillStyle = 'rgba(169,169,159,.9)';
+  g.font = '400 30px ' + getComputedStyle(document.body).fontFamily;
+  g.fillText(LANG === 'en' ? (total + ' stars, ' + dim + ' still dark') : (total + ' 颗星，其中 ' + dim + ' 颗还暗着'), 88, 284);
+
+  paintMini(g, 60, 330, 960, 640);
+
+  g.fillStyle = 'rgba(13,16,22,.94)';
+  g.fillRect(0, 1040, w, 310);
+  g.strokeStyle = 'rgba(217,167,94,.28)';
+  g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, 1040); g.lineTo(w, 1040); g.stroke();
+
+  const tp = targetId ? P(targetId) : null;
+  g.fillStyle = '#EDE6D8';
+  g.font = '600 34px ' + getComputedStyle(document.body).fontFamily;
+  g.fillText(tp
+    ? (LANG === 'en' ? ('"' + tp.name + '" is still empty') : ('「' + tp.name + '」这颗星还空着'))
+    : (LANG === 'en' ? 'One star is waiting to be lit' : '有一颗星，还等着人来点亮'), 84, 1110);
+
+  g.fillStyle = 'rgba(169,169,159,.92)';
+  g.font = '400 26px ' + getComputedStyle(document.body).fontFamily;
+  g.fillText(sentence || (LANG === 'en' ? 'Open Xingyi and enter the code below to claim yourself' : '打开星裔，输入下面的邀请码，认领你自己'), 84, 1158);
+
+  g.strokeStyle = 'rgba(242,217,168,.35)';
+  g.lineWidth = 1.4;
+  g.strokeRect(84, 1186, 300, 96);
+  g.fillStyle = '#F2D9A8';
+  g.font = '700 44px ui-monospace,SFMono-Regular,Menlo,monospace';
+  g.fillText(code.split('').join(' '), 108, 1252);
+
+  g.fillStyle = 'rgba(120,126,140,.9)';
+  g.font = '400 22px ' + getComputedStyle(document.body).fontFamily;
+  g.textAlign = 'right';
+  g.fillText(LANG === 'en' ? 'Your data stays on your own device' : '数据只留在你自己的设备上', w - 84, 1252);
+  g.textAlign = 'left';
+
+  return c;
+}
+
+function inviteFor(personId){
+  const target = personId || (nodes.find(n => n.kind === 'person' && !n.claimed) || { id: S.me }).id;
+  const p = P(target);
+  const existing = S.invites.find(i => i.target === target);
+  const code = existing ? existing.code : newCode();
+  if(!existing){
+    S.invites.push({ code: code, target: target, at: Date.now() });
+    S.shares = (S.shares || 0) + 1;
+  }
+  save();
+
+  const line = LANG === 'en'
+    ? (p ? ('"' + p.name + '" is still empty — can you fill it in?') : 'One star is still empty — can you fill it in?')
+    : (p ? ('「' + p.name + '」还空着，你能补一下吗') : '有一颗星还空着，你能补一下吗');
+  const dataUrl = makeShareCard(code, target, line).toDataURL('image/png');
+
+  sheet({
+    title:'邀请家人来点亮',
+    desc:'群里没人点链接，但会点开一张图。这张卡上有一个具体的缺口。',
+    body:
+      '<img src="' + dataUrl + '" alt="邀请卡片" style="width:100%;border-radius:12px;border:1px solid #1A1F28;display:block">' +
+      '<div class="field" style="margin-top:16px"><label>邀请码</label>' +
+        '<input data-key="code" value="' + code + '" readonly style="letter-spacing:.3em;font-family:ui-monospace,Menlo,monospace">' +
+      '</div>' +
+      '<p class="hint">把这张图发到家族群。对方打开星裔输入 ' + code + '，就能认领' + (p ? '「' + esc(p.name) + '」' : '') + '。认领完，整张网会以 TA 自己为中心重排，称呼也按 TA 那边重新算。</p>',
+    foot:'<button class="btn wide" id="simJoin">模拟家人来认领</button><button class="btn gold wide" id="dl">保存这张卡</button>',
+    mount(root){
+      root.querySelector('#dl').onclick = () => {
+        const a = document.createElement('a');
+        a.href = dataUrl; a.download = '星裔邀请-' + code + '.png';
+        a.click(); toast('已保存');
+      };
+      root.querySelector('#simJoin').onclick = () => { closeSheet(); joinFlow(code); };
+    }
+  });
+}
+
+function joinFlow(code){
+  const inv = S.invites.find(i => i.code === String(code || '').toUpperCase());
+  if(!inv){ toast('没有找到这个邀请码'); return; }
+  const seed = P(inv.target);
+  const fam = seed ? F(seed.fid) : S.fams[0];
+  const pool = S.people.filter(x => !x.claim && (!fam || x.fid === fam.id));
+
+  const rows = pool.map(x =>
+    '<div class="row" data-pick="' + x.id + '">' +
+      '<span class="dotmark" style="background:transparent;border:1px solid rgba(217,167,94,.55)"></span>' +
+      '<div class="row-main"><div class="row-title">' + esc(x.name) + '</div>' +
+      '<div class="row-sub">' + (x.b ? x.b + ' 年生' : '生年不详') + ' · 还没人认领</div></div>' +
+      '<span style="font-size:12px;color:var(--dim)">是我</span></div>'
+  ).join('');
+
+  sheet({
+    title:'你是哪一颗星？',
+    desc:'只选你自己，别的都不用管。',
+    body:'<div class="list">' + (rows || '<p class="hint">这一支已经全亮了。你可以新建一颗。</p>') + '</div>' +
+      '<p class="hint">认领之后，你只能改和自己直接相关的那几个人。</p>',
+    foot:'<button class="btn wide" data-close>先看看</button><button class="btn gold wide" id="newStar">我是新来的</button>',
+    mount(root){
+      root.querySelectorAll('[data-pick]').forEach(el => {
+        el.onclick = () => { const id = el.dataset.pick; closeSheet(); claimSheet(id); };
+      });
+      root.querySelector('#newStar').onclick = () => { closeSheet(); claimNew(fam); };
+    }
+  });
+}
+
+function claimSheet(id){
+  const p = P(id);
+  if(!p || p.claim){ toast('这颗星已经有人了'); return; }
+  sheet({
+    title:'确认是你',
+    desc:'名字可以改。认领之后，这颗星就归你，别人改不动。',
+    body:
+      '<div class="field"><label>姓名</label><input data-key="name" value="' + esc(p.name) + '"></div>' +
+      '<div class="field-row">' +
+        '<div class="field"><label>出生年</label><input data-key="b" inputmode="numeric" value="' + esc(p.b||'') + '" placeholder="可留空"></div>' +
+        '<div class="field"><label>性别</label><div class="seg" data-seg="sex">' +
+          '<button type="button" data-v="m" class="' + (p.sex === 'm' ? 'on' : '') + '">男</button>' +
+          '<button type="button" data-v="f" class="' + (p.sex === 'f' ? 'on' : '') + '">女</button>' +
+        '</div></div>' +
+      '</div>' +
+      '<p class="hint">只问这一句，别的以后慢慢补。</p>',
+    foot:'<button class="btn wide" data-close>不是我</button><button class="btn gold wide" id="ok">就是我</button>',
+    mount(root){
+      bindSegs(root);
+      root.querySelector('#ok').onclick = () => {
+        const d = readForm(root);
+        if(d.name) p.name = d.name;
+        p.sex = d.sex; if(d.b) p.b = d.b;
+        p.claim = true; p.claimAt = Date.now();
+        S.invites = S.invites.filter(i => i.target !== p.id);
+        viewerId = p.id;
+        buildGraph(); save(); updateHud(); closeSheet();
+        toast('「' + p.name + '」点亮了 · 现在整张网以 TA 为中心');
+        setTimeout(() => askUpstream(p.id, 1), 520);
+      };
+    }
+  });
+}
+
+function claimNew(fam){
+  const fid = fam ? fam.id : S.fams[0].id;
+  const np = { id: uid('p'), fid: fid, name:'新成员', sex:'m', b:'', d:'', note:'', img:'', claim:false, claimAt:0, privacy:'blood' };
+  S.people.push(np);
+  save();
+  claimSheet(np.id);
+}
+
+function askUpstream(id, round){
+  const p = P(id);
+  if(!p || round > 3){ endReverse(id); return; }
+  const father = S.pc.filter(e => e.c === id).map(e => P(e.p)).find(x => x && x.sex === 'm');
+  if(father){ askUpstream(father.id, round + 1); return; }
+
+  const label = round === 1 ? '你父亲叫什么？' : '那「' + p.name + '」的父亲呢？';
+  sheet({
+    title: label,
+    desc:'这不是表单，只是一个问题。知道多少填多少。',
+    body:
+      '<div class="field"><label>名字</label><input data-key="name" placeholder="姓 + 名"></div>' +
+      '<p class="hint">这一颗填上去是暗的——要等他本人来认领才会亮。</p>',
+    foot:'<button class="btn wide" id="skip">不知道</button><button class="btn gold wide" id="ok">就是他</button>',
+    mount(root){
+      const inp = root.querySelector('[data-key="name"]');
+      setTimeout(() => inp.focus(), 80);
+      root.querySelector('#skip').onclick = () => { closeSheet(); endReverse(id); };
+      root.querySelector('#ok').onclick = () => {
+        const name = inp.value.trim();
+        if(!name){ toast('填个名字，或者点“不知道”'); inp.focus(); return; }
+        const go = () => {
+          const np = commitPerson({ name: name, sex:'m' }, id, 'father');
+          np.claim = false; np.claimAt = 0;
+          buildGraph(); save(); updateHud(); closeSheet();
+          toast('挂上了「' + name + '」，还是暗的');
+          setTimeout(() => askUpstream(np.id, round + 1), 460);
+        };
+        const dup = sameSpot(id, 'father', name);
+        if(dup){ closeSheet(); askSame(dup, go); return; }
+        go();
+      };
+    }
+  });
+}
+
+function endReverse(id){
+  const p = P(id);
+  const father = p ? S.pc.filter(e => e.c === id).map(e => P(e.p)).find(x => x && !x.claim) : null;
+  const dim = S.people.filter(x => !x.claim);
+  const target = father ? father.id : (dim.length ? dim[dim.length - 1].id : null);
+  if(!target){ toast('这一支已经全亮了'); return; }
+  setTimeout(() => inviteFor(target), 280);
+}
+
+/* ---------- 家族与联姻 ---------- */
+function familiesSheet(){
+  const rows = S.fams.map(f => {
+    const n = S.people.filter(p => p.fid === f.id).length;
+    const linked = S.unions.some(u => (P(u.a) || {}).fid !== (P(u.b) || {}).fid && ((P(u.a) || {}).fid === f.id || (P(u.b) || {}).fid === f.id));
+    return '<div class="row" data-fam="' + f.id + '">' +
+      '<span class="dotmark" style="background:' + famColor(f) + '"></span>' +
+      '<div class="row-main"><div class="row-title">' + esc(f.name) + '</div>' +
+      '<div class="row-sub">' + n + ' 颗星' + (linked ? ' · 已与其他家族相连' : '') + '</div></div>' +
+      '<span style="font-size:12px;color:var(--dim)">查看</span></div>';
+  }).join('');
+
+  sheet({
+    title:'家族',
+    desc:'一个家族是一片星域。两个家族因为一场婚姻接壤，就连成了同一个宇宙。',
+    body: '<div class="list">' + rows + '</div>' +
+      '<p style="margin:20px 0 8px;font-weight:600;color:var(--bone)">家族之间的桥</p>' +
+      bridgeList() +
+      '<p class="hint">软链接只是握了手：两边看得见桥，看不见对方的人。双方各点一次头，才合并成同一张网。</p>',
+    foot:'<button class="btn wide" data-close>关闭</button><button class="btn gold wide" id="doLink">关联另一个家族</button>',
+    mount(root){
+      root.querySelectorAll('[data-fam]').forEach(el => {
+        el.onclick = () => { const id = el.dataset.fam; closeSheet(); focusFamily(id); };
+      });
+      root.querySelectorAll('[data-bridge]').forEach(el => {
+        el.onclick = () => { const id = el.dataset.bridge; closeSheet(); bridgeSheet(id); };
+      });
+      root.querySelector('#doLink').onclick = () => linkFamilySheet();
+    }
+  });
+}
+
+/* ---------- 两级关系：软链接 → 硬合并 ---------- */
+function crossUnions(){
+  return S.unions.filter(u => {
+    const a = P(u.a), b = P(u.b);
+    return a && b && a.fid !== b.fid;
+  });
+}
+
+function bridgeList(){
+  const list = crossUnions();
+  if(!list.length) return '<p class="hint">还没有。一场联姻会让两片星域接壤。</p>';
+  return '<div class="list">' + list.map(bridgeRow).join('') + '</div>';
+}
+
+function bridgeRow(u){
+  const a = P(u.a), b = P(u.b);
+  if(!a || !b) return '';
+  const hard = u.link === 'hard';
+  const agA = !!(u.agree && u.agree[a.fid]);
+  const agB = !!(u.agree && u.agree[b.fid]);
+  return '<div class="row" data-bridge="' + u.id + '">' +
+    '<span class="dotmark" style="background:' + (hard ? '#F2D9A8' : 'transparent') + ';border:1px solid ' + (hard ? '#F2D9A8' : 'rgba(217,167,94,.5)') + '"></span>' +
+    '<div class="row-main">' +
+      '<div class="row-title">' + esc(a.name) + ' ↔ ' + esc(b.name) + '</div>' +
+      '<div class="row-sub">' + (hard ? '已合并 · 两侧关系双向可见' : '软链接 · 双方数据互不可见') +
+        (hard ? '' : ' · ' + (agA ? '本家已点头' : '本家未点头') + '，' + (agB ? '对方已点头' : '对方未点头')) +
+      '</div>' +
+    '</div>' +
+    '<span style="font-size:12px;color:var(--dim)">' + (hard ? '解绑' : '处理') + '</span></div>';
+}
+
+function bridgeSheet(id){
+  const u = S.unions.find(x => x.id === id);
+  if(!u) return;
+  const a = P(u.a), b = P(u.b);
+  if(!a || !b) return;
+  const hard = u.link === 'hard';
+  const agA = !!(u.agree && u.agree[a.fid]);
+  const agB = !!(u.agree && u.agree[b.fid]);
+
+  sheet({
+    title:'两个家族之间的桥',
+    desc: hard ? '已经合并：两个人是同一条记录，两边的亲属关系互相可见。'
+               : '还是软链接：两边都看得见这座桥，但谁也看不见对方家族的人。',
+    body:
+      '<div class="list">' +
+        '<div class="row"><span class="dotmark" style="background:' + famColor(F(a.fid)) + '"></span>' +
+          '<div class="row-main"><div class="row-title">' + esc(a.name) + '</div><div class="row-sub">' + esc((F(a.fid)||{}).name||'') + ' · ' + (agA ? '已点头' : '未点头') + '</div></div></div>' +
+        '<div class="row"><span class="dotmark" style="background:' + famColor(F(b.fid)) + '"></span>' +
+          '<div class="row-main"><div class="row-title">' + esc(b.name) + '</div><div class="row-sub">' + esc((F(b.fid)||{}).name||'') + ' · ' + (agB ? '已点头' : '未点头') + '</div></div></div>' +
+      '</div>' +
+      '<p class="hint">' + (hard
+        ? '解绑后回退成软链接，各自的节点、关系、资料来源一条都不会丢。'
+        : '合并的条件是双方各点一次头。任何一方不点头，桥就一直保持虚线。') + '</p>',
+    foot: hard
+      ? '<button class="btn wide" data-close>关闭</button><button class="btn wide" id="unbind" style="border-color:#5A3A22;color:#C0703F">解绑</button>'
+      : '<button class="btn wide" data-close>关闭</button><button class="btn wide" id="agA">本家确认</button><button class="btn gold wide" id="agB">对方确认</button>',
+    mount(root){
+      if(hard){
+        root.querySelector('#unbind').onclick = () => unbindBridge(id);
+        return;
+      }
+      root.querySelector('#agA').onclick = () => agreeBridge(id, a.fid);
+      root.querySelector('#agB').onclick = () => agreeBridge(id, b.fid);
+    }
+  });
+}
+
+function agreeBridge(id, fid){
+  const u = S.unions.find(x => x.id === id);
+  if(!u) return;
+  u.agree = u.agree || {};
+  u.agree[fid] = true;
+  const a = P(u.a), b = P(u.b);
+  const both = a && b && u.agree[a.fid] && u.agree[b.fid];
+  if(both){ u.link = 'hard'; }
+  buildGraph(); save();
+  closeSheet();
+  toast(both ? '合并完成：两个人的记录合成一条，亲家关系双向可见' : '记下一次点头，还差另一边');
+  setTimeout(() => bridgeSheet(id), 340);
+}
+
+function unbindBridge(id){
+  const u = S.unions.find(x => x.id === id);
+  if(!u) return;
+  u.link = 'soft'; u.agree = {};
+  buildGraph(); save();
+  closeSheet();
+  toast('已解绑，回退成软链接，两边数据一条都没动');
+}
+
+function focusFamily(fid){
+  const list = nodes.filter(n => n.kind === 'person' && n.person.fid === fid);
+  if(!list.length) return;
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  list.forEach(n => {
+    x0 = Math.min(x0, n.x); x1 = Math.max(x1, n.x);
+    y0 = Math.min(y0, n.y); y1 = Math.max(y1, n.y);
+  });
+  const bw = Math.max(180, x1 - x0 + 200), bh = Math.max(180, y1 - y0 + 200);
+  cam.tx = (x0 + x1) / 2;
+  cam.ty = (y0 + y1) / 2;
+  const need = Math.max(bw / Math.max(220, W - 90), bh / Math.max(220, H - 240));
+  cam.dist = Math.max(420, Math.min(5200, cam.fov * need * 1.1));
+  view.x = 0; view.y = 0;
+  toast('已聚焦「' + ((F(fid) || {}).name || '') + '」');
+}
+
+function linkFamilySheet(){
+  const members = S.people.map(p =>
+    '<option value="' + p.id + '">' + esc(p.name) + '</option>'
+  ).join('');
+
+  sheet({
+    title:'让两个家族接壤',
+    desc:'选一位成员，再填上他要娶或要嫁的人。两个家族会在图上出现一座引力桥。',
+    body:
+      '<div class="field"><label>本家族的这一位</label><select data-key="anchor">' + members + '</select></div>' +
+      '<div class="field"><label>对方家族</label><input data-key="fam" placeholder="如 王家"></div>' +
+      '<div class="field"><label>对方姓名</label><input data-key="name" placeholder="他／她的名字"></div>' +
+      '<div class="field"><label>性别</label><div class="seg" data-seg="sex">' +
+        '<button type="button" data-v="m" class="on">男</button><button type="button" data-v="f">女</button></div></div>' +
+      '<p class="hint">默认只建立软链接：两边都看得见桥，但互相看不到对方家族的明细。要合并成同一份数据，需要双方各点一次头。</p>',
+    foot:'<button class="btn wide" data-close>取消</button><button class="btn gold wide" id="doLink2">建立联姻</button>',
+    mount(root){
+      bindSegs(root);
+      root.querySelector('#doLink2').onclick = () => {
+        const d = readForm(root);
+        if(!d.name || !d.fam){ toast('对方家族和姓名都要填'); return; }
+        const anchorP = P(d.anchor);
+        if(!anchorP) return;
+        const fid = uid('f');
+        S.fams.push({ id: fid, name: d.fam, surname: d.fam.slice(0,1), hue:'indigo', color: pickColor(fid + d.fam) });
+        const np = { id: uid('p'), fid: fid, name: d.name, sex: d.sex || 'f', b:'', d:'', note:'', img:'', claim:false, claimAt:0, privacy:'blood' };
+        S.people.push(np);
+        const u = ensureUnion(anchorP.id, np.id);
+        u.link = 'soft'; u.agree = {};
+        const elder = { id: uid('p'), fid: fid, name: d.fam.replace(/[家族]/g, '') + '氏长辈', sex:'m', b:'', d:'', note:'', img:'', claim:false, claimAt:0, privacy:'blood' };
+        S.people.push(elder);
+        S.pc.push({ p: elder.id, c: np.id, kind:'blood' });
+        buildGraph(); save(); updateHud(); closeSheet();
+        setTimeout(() => bridgeSheet(u.id), 320);
+      };
+    }
+  });
+}
+
+/* ---------- 度量 ---------- */
+function metricsSheet(){
+  const DAY = 86400000;
+  const now = Date.now();
+  const claimed = S.people.filter(p => p.claim);
+  const claimed30 = claimed.filter(p => !p.claimAt || (now - p.claimAt) <= 30 * DAY).length;
+  const dim = S.people.length - claimed.length;
+  const shares = S.shares || 0;
+  const K = shares > 0 ? Math.max(0, claimed.length - 1) / shares : null;
+  const gens = S.me ? Math.max.apply(null, S.people.map(p => (relSteps(S.me, p.id) || []).length || 1)) : 1;
+  const bridges = crossUnions();
+
+  const line = (label, val, note) =>
+    '<div class="row"><div class="row-main"><div class="row-title" style="font-weight:400">' + label + '</div>' +
+    (note ? '<div class="row-sub">' + note + '</div>' : '') + '</div>' +
+    '<span style="font-size:14px;color:var(--bone)">' + val + '</span></div>';
+
+  const steps = [
+    ['建出三代以上', gens >= 3, '当前 ' + gens + ' 代'],
+    ['第一次分享出去', shares > 0, shares + ' 次'],
+    ['第一位家人认领', claimed.length > 1, Math.max(0, claimed.length - 1) + ' 人'],
+    ['出现第一段联姻', bridges.length > 0, bridges.length + ' 座桥']
+  ].map(s =>
+    '<div class="row"><div class="row-main"><div class="row-title" style="font-weight:400">' + s[0] + '</div>' +
+    '<div class="row-sub">' + s[2] + '</div></div>' +
+    '<span style="font-size:12px;color:' + (s[1] ? 'var(--gold)' : 'var(--dim)') + '">' + (s[1] ? '已达成' : '未发生') + '</span></div>'
+  ).join('');
+
+  sheet({
+    title:'家族度量',
+    desc:'北极星只有一个：30 日内被本人认领的真实人数。节点总数不算。',
+    body:
+      '<div class="list">' +
+        line('30 日内被本人认领', claimed30 + ' 人', '节点可以由一个人狂加，认领不能') +
+        line('全部星数 / 还暗着', S.people.length + ' / ' + dim, '暗星就是缺口，就是邀请的理由') +
+        line('累计分享', shares + ' 次', '每次分享生成一张带暗星的卡') +
+        line('裂变系数 K', K === null ? '—' : K.toFixed(2), '每次分享带来的有效认领，K 大于 1 才算跑通') +
+      '</div>' +
+      '<p style="margin:20px 0 8px;font-weight:600;color:var(--bone)">五步漏斗</p>' +
+      '<div class="list">' + steps + '</div>' +
+      '<p class="hint">最大的一次流失通常发生在“首次分享 → 首位认领”之间。这一环掉，说明卡片还不够让人想点。</p>',
+    foot:'<button class="btn wide" data-close>关闭</button><button class="btn gold wide" id="goInvite">生成一张邀请卡</button>',
+    mount(root){
+      root.querySelector('#goInvite').onclick = () => { closeSheet(); setTimeout(() => inviteFor(null), 260); };
+    }
+  });
+}
+
+/* ---------- 时间轴 ---------- */
+function toggleTimeline(){
+  timelineOn = !timelineOn;
+  const el = document.getElementById('timeline');
+  el.classList.toggle('on', timelineOn);
+  if(timelineOn){
+    const y = document.getElementById('yearRange');
+    const years = S.people.map(p => Number(p.b)).filter(n => n && n > 1800);
+    const min = years.length ? Math.min.apply(null, years) : 1900;
+    const max = new Date().getFullYear();
+    y.min = min; y.max = max; y.value = max;
+    yearLimit = max;
+    document.getElementById('tlYear').textContent = max;
+  } else {
+    yearLimit = 99999;
+  }
+  toast(timelineOn ? '拖动时间轴，看这一家怎么长出来' : '已回到现在');
+}
+
+/* ---------- 家族宇宙 · 多人同步 ---------- */
+const SYNC_BASE = 'https://hometree-d2gvymar7e5dccab1-1530795354.ap-shanghai.app.tcloudbase.com/api';
+const DEVICE_KEY = 'xingyi.device';
+
+function deviceId(){
+  let d = '';
+  try{ d = localStorage.getItem(DEVICE_KEY) || ''; }catch(e){}
+  if(!d){
+    d = 'd' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    try{ localStorage.setItem(DEVICE_KEY, d); }catch(e){}
+  }
+  return d;
+}
+function graphOf(){ return { fams: S.fams || [], people: S.people || [], unions: S.unions || [], pc: S.pc || [], dead: S.dead || [] }; }
+function syncOn(){ return !!(S.gid && S.token); }
+
+function apiCall(body){
+  const payload = Object.assign({ device: deviceId() }, body);
+  return fetch(SYNC_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function(res){
+    return res.text();
+  }).then(function(txt){
+    let out = {};
+    try{ out = JSON.parse(txt); }catch(e){ throw new Error('bad_response'); }
+    return out;
+  });
+}
+
+function _purgeDead(s){
+  s = s || S;
+  if(!s || !Array.isArray(s.dead) || !s.dead.length) return s;
+  const d = {};
+  s.dead.forEach(id => { d[id] = 1; });
+  s.people = (s.people || []).filter(p => !d[p.id]);
+  s.unions = (s.unions || []).filter(u => !d[u.a] && !d[u.b]);
+  s.pc = (s.pc || []).filter(e => !d[e.p] && !d[e.c]);
+  if(s.invites) s.invites = s.invites.filter(i => !d[i.target]);
+  return s;
+}
+function applyRemoteGraph(g){
+  if(!g) return 0;
+  const before = (S.people || []).length;
+  if(g.fams) S.fams = g.fams;
+  if(g.people) S.people = g.people;
+  if(g.unions) S.unions = g.unions;
+  if(g.pc) S.pc = g.pc;
+  if(Array.isArray(g.dead)) S.dead = g.dead;
+  _purgeDead();
+  syncQuiet++;
+  save();
+  buildGraph(); resize(); updateHud();
+  syncQuiet--;
+  return (S.people || []).length - before;
+}
+
+function doCreate(){
+  return apiCall({ action: 'create', graph: graphOf() }).then(function(r){
+    if(!r.ok) throw new Error(r.err || 'fail');
+    S.gid = r.gid; S.code = r.code; S.token = r.token; S.rev = r.rev || 0;
+    S.syncedAt = Date.now(); save();
+    return r;
+  });
+}
+function doJoin(code){
+  return apiCall({ action: 'join', code: String(code || '').toUpperCase().trim() }).then(function(r){
+    if(!r.ok) throw new Error(r.err || 'fail');
+    S.gid = r.gid; S.code = r.code; S.token = r.token; S.rev = r.rev || 0;
+    S.syncedAt = Date.now();
+    applyRemoteGraph(r.graph);
+    return r;
+  });
+}
+function doPull(){
+  if(!syncOn()) return Promise.resolve(null);
+  return apiCall({ action: 'pull', gid: S.gid, token: S.token }).then(function(r){
+    if(!r.ok) throw new Error(r.err || 'fail');
+    S.rev = r.rev || S.rev;
+    applyRemoteGraph(r.graph);
+    S.syncedAt = Date.now(); save();
+    return r;
+  });
+}
+function doPush(){
+  if(!syncOn()) return Promise.resolve(null);
+  return apiCall({ action: 'push', gid: S.gid, token: S.token, graph: graphOf() }).then(function(r){
+    if(!r.ok) throw new Error(r.err || 'fail');
+    S.rev = r.rev || S.rev;
+    applyRemoteGraph(r.graph);
+    S.syncedAt = Date.now(); save();
+    return r;
+  });
+}
+var pushTimer = 0;
+function schedulePush(){
+  if(!syncOn() || syncQuiet > 0) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(function(){ doPush().catch(function(){}); }, 4000);
+}
+
+function joinSheet(){
+  sheet({
+    title: '用邀请码加入',
+    desc: '输入家人给你的 6 位邀请码，他们已经补好的星会自动出现在你的星图上。',
+    body: '<input id="joinCode" maxlength="6" placeholder="K3M7QP" style="width:100%;box-sizing:border-box;padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#F2E9D8;font:inherit;font-size:22px;letter-spacing:.22em;text-transform:uppercase;text-align:center;outline:none">' +
+          '<p class="hint" id="joinMsg">加入之后，你就是自己这片宇宙的中心，看到的称谓也按你来算。</p>',
+    foot: '<button class="btn wide" data-close>取消</button><button class="btn wide gold" id="doJoinBtn">加入</button>',
+    mount: function(root){
+      const inp = root.querySelector('#joinCode');
+      const msg = root.querySelector('#joinMsg');
+      setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 60);
+      root.querySelector('#doJoinBtn').onclick = function(){
+        const code = inp.value.trim().toUpperCase();
+        if(code.length !== 6){ msg.textContent = '邀请码是 6 位字符'; return; }
+        msg.textContent = '正在加入…';
+        doJoin(code).then(function(){
+          closeSheet();
+          toast('已加入 · 共 ' + (S.people || []).length + ' 颗星');
+        }).catch(function(e){
+          const m = { code_not_found: '没找到这个邀请码', no_code: '请输入邀请码', no_actor: '身份没生成，重开一次试试' };
+          msg.textContent = m[e.message] || '连不上云端，稍后再试';
+        });
+      };
+    }
+  });
+}
+
+/* ---------- 离线分享码：不依赖服务器，也能把星图交给家人 ---------- */
+function packShare(){
+  const g = { v:1, t:Date.now(), fams:S.fams||[], people:S.people||[], unions:S.unions||[], pc:S.pc||[] };
+  const json = JSON.stringify(g);
+  let b64 = '';
+  try{ b64 = btoa(unescape(encodeURIComponent(json))); }
+  catch(e){ b64 = ''; }
+  return 'XY1-' + b64;
+}
+function unpackShare(str){
+  const s = String(str||'').trim().replace(/^XY1-/, '').replace(/\s+/g, '');
+  if(!s) throw new Error('no_code');
+  let json = '';
+  try{ json = decodeURIComponent(escape(atob(s))); }
+  catch(e){ throw new Error('bad_code'); }
+  let g = null;
+  try{ g = JSON.parse(json); }
+  catch(e){ throw new Error('bad_code'); }
+  return g;
+}
+function mergeShare(g){
+  if(!g || !g.people) throw new Error('bad_code');
+  let added = 0;
+  const pid = {};
+  (S.people || []).forEach(function(p){ if(p && p.id) pid[p.id] = 1; });
+  (g.people || []).forEach(function(p){
+    if(p && p.id && !pid[p.id]){ S.people.push(p); pid[p.id] = 1; added++; }
+  });
+  const seen = {};
+  function keyOf(o){ try{ return JSON.stringify(o); }catch(e){ return ''; } }
+  (S.unions || []).forEach(function(u){ seen['u' + keyOf(u)] = 1; });
+  (g.unions || []).forEach(function(u){
+    const k = 'u' + keyOf(u);
+    if(!seen[k]){ S.unions.push(u); seen[k] = 1; }
+  });
+  (S.fams || []).forEach(function(f){ seen['f' + keyOf(f)] = 1; });
+  (g.fams || []).forEach(function(f){
+    const k = 'f' + keyOf(f);
+    if(!seen[k]){ S.fams.push(f); seen[k] = 1; }
+  });
+  (S.pc || []).forEach(function(c){ seen['c' + keyOf(c)] = 1; });
+  (g.pc || []).forEach(function(c){
+    const k = 'c' + keyOf(c);
+    if(!seen[k]){ S.pc.push(c); seen[k] = 1; }
+  });
+  return added;
+}
+function copyToClipboard(txt){
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt); return true; }
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){ return false; }
+}
+function shareCodeSheet(){
+  const code = packShare();
+  sheet({
+    title: '把星图交给家人',
+    desc: '这串分享码里装着你现在的整张星图。发给家人，他们粘贴进来就能接着补，缺不了任何一颗星。',
+    body:
+      '<textarea id="shareCodeBox" readonly style="width:100%;box-sizing:border-box;height:120px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#F2E9D8;font:inherit;font-size:12px;line-height:1.5;word-break:break-all;resize:none;outline:none">' + code + '</textarea>' +
+      '<p class="hint">家人打开星裔 → 更多 → 家族宇宙 → 粘贴分享码，就能把你补的星并进他的星图。</p>',
+    foot: '<button class="btn wide gold" id="copyShare">复制分享码</button><button class="btn wide" data-close>关闭</button>',
+    mount: function(root){
+      root.querySelector('#copyShare').onclick = function(){
+        if(copyToClipboard(code)) toast('分享码已复制，发给家人吧');
+        else toast('复制不了，长按上面的文字手动复制');
+      };
+    }
+  });
+}
+function importShareSheet(){
+  sheet({
+    title: '粘贴家人的分享码',
+    desc: '家人发给你的那串 XY1- 开头的文字，粘进来就把他们的星并到你的星图上。',
+    body:
+      '<textarea id="importBox" style="width:100%;box-sizing:border-box;height:120px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#F2E9D8;font:inherit;font-size:12px;line-height:1.5;resize:none;outline:none" placeholder="XY1-..."></textarea>' +
+      '<p class="hint" id="importMsg">只并入你这边还没有的星，你自己补的不会被覆盖。</p>',
+    foot: '<button class="btn wide" data-close>取消</button><button class="btn wide gold" id="doImport">并进来</button>',
+    mount: function(root){
+      root.querySelector('#doImport').onclick = function(){
+        const msg = root.querySelector('#importMsg');
+        let g = null;
+        try{ g = unpackShare(root.querySelector('#importBox').value); }
+        catch(e){ msg.textContent = '这串码读不出来，确认有没有复制全'; return; }
+        let added = 0;
+        try{ added = mergeShare(g); }
+        catch(e){ msg.textContent = '这串码不是星裔的分享码'; return; }
+        save(); buildGraph(); resize(); updateHud();
+        closeSheet();
+        toast(added > 0 ? ('并进来 ' + added + ' 颗新星 · 共 ' + S.people.length + ' 颗') : '这些星你这边已经有了');
+      };
+    }
+  });
+}
+
+function syncSheet(){
+  if(!syncOn()){
+    sheet({
+      title: '把宇宙连起来',
+      desc: '一个人先建宇宙，拿到 6 位邀请码；家人用这串码加入，之后谁补的星都会并进同一片星图。',
+      body:
+        '<div class="list">' +
+          '<div class="row" id="rowCreate"><div class="row-main"><div class="row-title">创建家族宇宙</div><div class="row-sub">把现在的星图传上去，生成邀请码</div></div><span style="font-size:12px;color:var(--dim)">创建</span></div>' +
+          '<div class="row" id="rowJoin"><div class="row-main"><div class="row-title">用邀请码加入</div><div class="row-sub">输入家人发给你的 6 位码</div></div><span style="font-size:12px;color:var(--dim)">加入</span></div>' +
+          '<div class="row" id="rowShareCode"><div class="row-main"><div class="row-title">把星图交给家人 · 分享码</div><div class="row-sub">不用联网，一串码复制给家人就行</div></div><span style="font-size:12px;color:var(--dim)">生成</span></div>' +
+          '<div class="row" id="rowImportCode"><div class="row-main"><div class="row-title">粘贴家人的分享码</div><div class="row-sub">把家人补的星并进你的星图</div></div><span style="font-size:12px;color:var(--dim)">粘贴</span></div>' +
+        '</div>' +
+        '<p class="hint">云端只存星图本身，不存「你是谁」。所以同一片宇宙，每位家人打开时都以自己为中心。</p>',
+      foot: '<button class="btn wide" data-close>关闭</button>',
+      mount: function(root){
+        root.querySelector('#rowCreate').onclick = function(){
+          toast('正在创建…');
+          doCreate().then(function(){
+            closeSheet();
+            sheet({
+              title: '宇宙建好了',
+              desc: '把这串邀请码发给家人。他们打开星裔 → 更多 → 家族宇宙 → 用邀请码加入。',
+              body: '<div style="text-align:center;padding:10px 0 6px"><div style="font-size:34px;letter-spacing:.16em;color:var(--gold);font-weight:600">' + S.code + '</div></div>',
+              foot: '<button class="btn wide" data-close>记住了</button>',
+              mount: function(){}
+            });
+          }).catch(function(e){
+            toast('云端还没开通 · 先用下面的「分享码」交给家人');
+          });
+        };
+        root.querySelector('#rowJoin').onclick = function(){ closeSheet(); joinSheet(); };
+        root.querySelector('#rowShareCode').onclick = function(){ closeSheet(); shareCodeSheet(); };
+        root.querySelector('#rowImportCode').onclick = function(){ closeSheet(); importShareSheet(); };
+      }
+    });
+    return;
+  }
+  const stamp = S.syncedAt ? new Date(S.syncedAt).toLocaleString() : '还没有同步过';
+  sheet({
+    title: '家族宇宙 · ' + S.code,
+    desc: '家人用同一个邀请码进来。你补的星传上去，他们点同步就能看到。',
+    body:
+      '<div style="text-align:center;padding:4px 0 16px">' +
+        '<div style="font-size:11px;letter-spacing:.18em;color:var(--dim);margin-bottom:9px">邀请码</div>' +
+        '<div style="font-size:32px;letter-spacing:.16em;color:var(--gold);font-weight:600">' + S.code + '</div>' +
+      '</div>' +
+      '<div class="list">' +
+        '<div class="row" id="rowCopyCode"><div class="row-main"><div class="row-title">复制邀请码</div><div class="row-sub">粘贴到微信发给家人</div></div><span style="font-size:12px;color:var(--dim)">复制</span></div>' +
+        '<div class="row" id="rowPull"><div class="row-main"><div class="row-title">从云端取回</div><div class="row-sub">看看家人新补了谁</div></div><span style="font-size:12px;color:var(--dim)">取回</span></div>' +
+        '<div class="row" id="rowPush"><div class="row-main"><div class="row-title">把改动传上去</div><div class="row-sub">让家人同步到你补的星</div></div><span style="font-size:12px;color:var(--dim)">上传</span></div>' +
+        '<div class="row" id="rowLeave"><div class="row-main"><div class="row-title" style="color:#C0703F">退出这个宇宙</div><div class="row-sub">只退出，本机星图保留</div></div><span style="font-size:12px;color:var(--dim)">退出</span></div>' +
+      '</div>' +
+      '<p class="hint">上次同步：' + stamp + '</p>',
+    foot: '<button class="btn wide" data-close>关闭</button>',
+    mount: function(root){
+      root.querySelector('#rowCopyCode').onclick = function(){
+        const txt = S.code;
+        try{
+          if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt);
+          else {
+            const ta = document.createElement('textarea');
+            ta.value = txt; document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+          }
+          toast('邀请码已复制');
+        }catch(e){ toast('复制不了，手写一下：' + txt); }
+      };
+      root.querySelector('#rowPull').onclick = function(){
+        toast('正在取回…');
+        doPull().then(function(){
+          toast('已取回 · 共 ' + (S.people || []).length + ' 颗星');
+          closeSheet();
+        }).catch(function(){ toast('取回失败，检查网络'); });
+      };
+      root.querySelector('#rowPush').onclick = function(){
+        toast('正在上传…');
+        doPush().then(function(){
+          toast('已上传');
+          closeSheet();
+        }).catch(function(){ toast('上传失败，检查网络'); });
+      };
+      root.querySelector('#rowLeave').onclick = function(){
+        S.gid = null; S.code = ''; S.token = ''; S.rev = 0; S.syncedAt = 0; save();
+        closeSheet(); toast('已退出这个宇宙');
+      };
+    }
+  });
+}
+
+/* ---------- 更多 / 数据 ---------- */
+function moreSheet(){
+  sheet({
+    title:'数据与设置',
+    desc:'这一版的数据只存在这台设备的浏览器里，换设备或清缓存会丢。',
+    body:
+      '<div class="list">' +
+        '<div class="row" id="rowSync"><div class="row-main"><div class="row-title">家族宇宙 · 多人共用</div><div class="row-sub">' + (syncOn() ? ('已连接 · 邀请码 ' + S.code) : '生成邀请码，家人一起补星') + '</div></div><span style="font-size:12px;color:var(--dim)">' + (syncOn() ? '管理' : '开启') + '</span></div>' +
+        '<div class="row" id="rowMetrics"><div class="row-main"><div class="row-title">家族度量</div><div class="row-sub">认领人数、裂变系数 K、五步漏斗</div></div><span style="font-size:12px;color:var(--dim)">查看</span></div>' +
+        '<div class="row" id="rowExport"><div class="row-main"><div class="row-title">导出全量数据</div><div class="row-sub">一个 JSON 文件，可以换设备导入</div></div><span style="font-size:12px;color:var(--dim)">导出</span></div>' +
+        '<div class="row" id="rowImport"><div class="row-main"><div class="row-title">导入数据</div><div class="row-sub">选择之前导出的 JSON</div></div><span style="font-size:12px;color:var(--dim)">选择</span></div>' +
+        '<div class="row" id="rowReset"><div class="row-main"><div class="row-title" style="color:#C0703F">清空并重新开始</div><div class="row-sub">删除这台设备上的全部星图</div></div><span style="font-size:12px;color:var(--dim)">清空</span></div>' +
+      '</div>' +
+      '<p class="hint">星图平时只存在这台设备上；只有你主动开启「家族宇宙」时，才会把星图放到云端，让家人一起补。</p>',
+    foot:'<button class="btn wide" data-close>关闭</button>',
+    mount(root){
+      root.querySelector('#rowSync').onclick = () => syncSheet();
+      root.querySelector('#rowMetrics').onclick = () => metricsSheet();
+      root.querySelector('#rowExport').onclick = () => {
+        const blob = new Blob([JSON.stringify(S, null, 2)], { type:'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '星裔数据-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        toast('已导出');
+      };
+      root.querySelector('#rowImport').onclick = () => {
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.accept = 'application/json';
+        inp.onchange = () => {
+          const f = inp.files[0]; if(!f) return;
+          const rd = new FileReader();
+          rd.onload = () => {
+            try{
+              const d = JSON.parse(rd.result);
+              if(!d.people) throw new Error('bad');
+              S = d; save(); buildGraph(); resize(); updateHud(); closeSheet();
+              toast('已导入 ' + d.people.length + ' 颗星');
+            }catch(e){ toast('这个文件读不了'); }
+          };
+          rd.readAsText(f);
+        };
+        inp.click();
+      };
+      root.querySelector('#rowReset').onclick = () => {
+        sheet({
+          title:'确认清空？',
+          desc:'这台设备上的所有星图数据会被删除，且无法恢复。',
+          body:'<p class="hint">如果只是想重新看示例，可以先导出一份备份。</p>',
+          foot:'<button class="btn wide" data-close>算了</button><button class="btn wide" id="doReset" style="border-color:#5A3A22;color:#C0703F">确认清空</button>',
+          mount(r2){
+            r2.querySelector('#doReset').onclick = () => { localStorage.removeItem(KEY); location.reload(); };
+          }
+        });
+      };
+    }
+  });
+}
+/* ============================================================
+   Part 6 · 星图交互 / 引导 / 启动
+   ============================================================ */
+/* ---------- 连线：悬停或点一下就告诉你这两颗是什么关系 ---------- */
+const edgeTipEl = document.getElementById('edgeTip');
+let edgeHover = null;
+
+function segDist(px, py, ax, ay, bx, by){
+  const dx = bx - ax, dy = by - ay;
+  const L = dx * dx + dy * dy;
+  let t = L ? ((px - ax) * dx + (py - ay) * dy) / L : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + dx * t), py - (ay + dy * t));
+}
+
+function hitEdge(x, y){
+  const pj = {};
+  nodes.forEach(n => { if(visible(n)) pj[n.id] = project(n.x, n.y, zOf(n)); });
+  let best = null, bestD = 9;
+  edges.forEach(e => {
+    const a = pj[e.from], b = pj[e.to];
+    if(!a || !b) return;
+    const mid = e.hub ? pj['h_' + e.hub.union.id] : null;
+    if(mid){
+      const d0 = Math.min(
+        segDist(x, y, a.x, a.y, mid.x, mid.y),
+        segDist(x, y, mid.x, mid.y, b.x, b.y)
+      );
+      if(d0 < bestD){ bestD = d0; best = e; }
+    } else {
+      const d0 = segDist(x, y, a.x, a.y, b.x, b.y);
+      if(d0 < bestD){ bestD = d0; best = e; }
+    }
+  });
+  return best;
+}
+
+function showEdgeTip(e, cx, cy){
+  const vp = P(viewerId || S.me);
+  const other = e.p2 ? P(e.p2) : null;
+  let sub = '';
+  if(vp && other && other.id !== vp.id && other.id !== e.p1){
+    const t = kinTermL(vp.id, other.id);
+    if(t && t !== '未连接'){
+      sub = LANG === 'en'
+        ? (vp.name + ' sees ' + other.name + ' as ' + t)
+        : (vp.name + ' 眼里，' + other.name + ' 是' + t);
+    }
+  }
+  edgeTipEl.innerHTML = '<b>' + esc(e.txt || '') + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '');
+  edgeTipEl.style.left = Math.max(8, Math.min(window.innerWidth - 252, cx + 16)) + 'px';
+  edgeTipEl.style.top = Math.max(8, Math.min(window.innerHeight - 92, cy + 16)) + 'px';
+  edgeTipEl.classList.add('on');
+}
+function hideEdgeTip(){ edgeTipEl.classList.remove('on'); }
+
+const ptrs = new Map();
+let down = false, moved = 0, lx = 0, ly = 0, pinch = null;
+const rectOf = () => cv.getBoundingClientRect();
+
+cv.addEventListener('pointerdown', e => {
+  hideEdgeTip();
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if(ptrs.size === 1){ down = true; moved = 0; lx = e.clientX; ly = e.clientY; }
+  if(ptrs.size === 2){
+    const a = Array.from(ptrs.values());
+    pinch = {
+      d: Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y),
+      dist: cam.dist,
+      cx: (a[0].x + a[1].x) / 2,
+      cy: (a[0].y + a[1].y) / 2
+    };
+    down = false;
+  }
+});
+
+cv.addEventListener('pointermove', e => {
+  if(ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if(ptrs.size === 2 && pinch){
+    const a = Array.from(ptrs.values());
+    const d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+    cam.dist = Math.max(300, Math.min(5600, pinch.dist * (pinch.d / Math.max(1, d))));
+    return;
+  }
+
+  if(down){
+    const dx = e.clientX - lx, dy = e.clientY - ly;
+    moved += Math.hypot(dx, dy);
+    spinHold = 9;
+    cam.yaw += dx * 0.0026;
+    cam.pitch = Math.max(-0.5, Math.min(1.0, cam.pitch + dy * 0.0022));
+    lx = e.clientX; ly = e.clientY;
+    if(moved > 6) cv.classList.add('dragging');
+    return;
+  }
+
+  const r = rectOf();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const h = hit(x, y);
+  hovered = h;
+  edgeHover = h ? null : hitEdge(x, y);
+  if(edgeHover){
+    showEdgeTip(edgeHover, e.clientX, e.clientY);
+    cv.style.cursor = 'pointer';
+  } else {
+    hideEdgeTip();
+    cv.style.cursor = h ? 'pointer' : 'grab';
+  }
+});
+
+function endPointer(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size < 2) pinch = null;
+  if(ptrs.size === 0) cv.classList.remove('dragging');
+  if(down && moved < 7){
+    const r = rectOf();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const h = hit(x, y);
+    if(h){ showCard(h); hideEdgeTip(); }
+    else {
+      const ee = hitEdge(x, y);
+      if(ee) showEdgeTip(ee, e.clientX, e.clientY);
+      else { hideEdgeTip(); hideCard(); }
+    }
+  }
+  down = false;
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); down = false; pinch = null; });
+
+function zoomAt(px, py, factor){
+  cam.dist = Math.max(300, Math.min(5600, cam.dist / Math.max(0.2, factor)));
+}
+
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.12 : 0.89);
+}, { passive: false });
+
+cv.addEventListener('dblclick', e => {
+  e.preventDefault();
+  if(fitBox) fitView();
+  toast('已回到全景');
+});
+
+/* ---------- 添加面板 ---------- */
+function addSheet(){
+  const anchorDefault = selected && selected.kind === 'person' ? selected.id : S.me;
+  const opts = S.people.map(p =>
+    '<option value="' + p.id + '"' + (p.id === anchorDefault ? ' selected' : '') + '>' +
+    esc(p.name) + (p.id === S.me ? (LANG === 'en' ? ' (me)' : '（我）') : '') + '</option>'
+  ).join('');
+
+  sheet({
+    title:'添加一位家人',
+    desc:'先选是谁的什么关系。位置、连线、辈分都会自动排好，不用手摆。',
+    body:
+      '<div class="field"><label>以谁为基准</label><select data-key="anchor">' + opts + '</select></div>' +
+      '<div class="field"><label>是什么关系</label><select data-key="role">' +
+        '<option value="father">父亲</option>' +
+        '<option value="mother">母亲</option>' +
+        '<option value="spouse">配偶</option>' +
+        '<option value="child">子女</option>' +
+        '<option value="sibling">兄弟姐妹</option>' +
+      '</select></div>' +
+      '<p class="hint">填一个名字就能先挂上去。生卒、照片、一句话都可以以后由家人补。</p>',
+    foot:'<button class="btn wide" data-close>取消</button><button class="btn gold wide" id="next">下一步</button>',
+    mount(root){
+      root.querySelector('#next').onclick = () => {
+        const anchor = root.querySelector('[data-key="anchor"]').value;
+        const role = root.querySelector('[data-key="role"]').value;
+        closeSheet();
+        const n = nodes.find(x => x.id === anchor);
+        if(n) addRelation(n, role);
+      };
+    }
+  });
+}
+
+/* ---------- 引导 ---------- */
+function createSheet(){
+  sheet({
+    title:'建立我的家族',
+    desc:'不用注册。先给家族起个名字，再点亮你自己。',
+    body:
+      '<div class="field"><label>家族名</label><input data-key="fam" placeholder="如 张家"></div>' +
+      '<div class="field"><label>你的名字</label><input data-key="name" placeholder="家人怎么叫你"></div>' +
+      '<div class="field-row">' +
+        '<div class="field" style="flex:1.3"><label>出生年</label><input data-key="b" inputmode="numeric" placeholder="如 1990"></div>' +
+        '<div class="field" style="flex:1"><label>性别</label><div class="seg" data-seg="sex">' +
+          '<button type="button" data-v="m" class="on">男</button><button type="button" data-v="f">女</button>' +
+        '</div></div>' +
+      '</div>' +
+      '<p class="hint">之后你可以随时补资料、加家人。数据存在这台设备，连上家族宇宙后家人共享。</p>',
+    foot:'<button class="btn wide" data-close>再想想</button><button class="btn gold wide" id="go">开始</button>',
+    mount(root){
+      bindSegs(root);
+      root.querySelector('#go').onclick = () => {
+        const d = readForm(root);
+        if(!d.fam || !d.name){ toast('家族名和你的名字都填一下'); return; }
+        S = blank();
+        const fid = uid('f');
+        S.fams.push({ id: fid, name: d.fam, surname: d.fam.slice(0, 1), hue:'gold', color: pickColor(fid + d.fam) });
+        const me = { id: uid('p'), fid: fid, name: d.name, sex: d.sex || 'm', b: d.b || '', d:'', note:'', img:'', claim:true };
+        S.people.push(me);
+        S.me = me.id;
+        buildGraph(); save(); updateHud(); fitView();
+        closeSheet(); hideOnboard();
+        setTimeout(() => {
+          toast('三分钟，先把三代挂出来');
+          askUpstream(me.id, 1);
+        }, 480);
+      };
+    }
+  });
+}
+
+function hideOnboard(){
+  const ob = document.getElementById('onboard');
+  ob.classList.add('out');
+  setTimeout(() => { ob.style.display = 'none'; }, 460);
+}
+
+/* 示例状态下的常驻角标：任何时候都看得见"这是示例"，并能一键退出 */
+function showDemoChip(){
+  let el = document.getElementById('demoChip');
+  if(el) return;
+  el = document.createElement('div');
+  el.id = 'demoChip';
+  el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + var(--safe-t));z-index:70;padding:8px 15px;border-radius:999px;background:rgba(217,167,94,.13);border:1px solid rgba(217,167,94,.42);color:#F2D9A8;font-size:12px;letter-spacing:.05em;cursor:pointer;white-space:nowrap;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)';
+  el.textContent = '示例数据 · 点这里建我自己的';
+  el.onclick = clearDemo;
+  document.body.appendChild(el);
+}
+
+function clearDemo(){
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  const el = document.getElementById('demoChip');
+  if(el) el.remove();
+  S = null; nodes = []; edges = []; selected = null; hovered = null;
+  const ob = document.getElementById('onboard');
+  ob.style.display = ''; ob.classList.remove('out');
+  updateHud(); resize();
+  createSheet();
+}
+
+/* ---------- 启动 ---------- */
+document.getElementById('btnLegend').onclick = function(){
+  document.getElementById('legend').classList.toggle('on');
+};
+document.getElementById('btnMore').onclick = moreSheet;
+document.getElementById('btnFamilies').onclick = familiesSheet;
+document.getElementById('btnAdd').onclick = addSheet;
+document.getElementById('btnInvite').onclick = function(){ syncSheet(); };
+document.getElementById('btnClock').onclick = toggleTimeline;
+document.getElementById('btnViewer').onclick = function(){ if(S) viewerSheet(); };
+document.getElementById('btnLayout').onclick = function(){
+  if(!S) return;
+  layoutMode = layoutMode === 'radial' ? 'tree' : 'radial';
+  this.textContent = layoutMode === 'radial'
+    ? (LANG === 'en' ? 'Radial' : '辐射')
+    : (LANG === 'en' ? 'Tree' : '族谱');
+  buildGraph();
+  fitView();
+  toast(layoutMode === 'radial' ? '按关系远近，一圈一圈围起来' : '回到按辈分分层的族谱');
+};
+
+const yr = document.getElementById('yearRange');
+yr.addEventListener('input', () => {
+  yearLimit = Number(yr.value);
+  document.getElementById('tlYear').textContent = yr.value;
+  const pct = ((Number(yr.value) - Number(yr.min)) / Math.max(1, Number(yr.max) - Number(yr.min))) * 100;
+  yr.style.setProperty('--fill', pct + '%');
+});
+
+document.getElementById('obCreate').onclick = createSheet;
+document.getElementById('obDemo').onclick = function(){
+  S = seedDemo(); S.demo = true; hideOnboard();
+  buildGraph(); resize(); updateHud();
+  showDemoChip();
+  setTimeout(() => toast('这是示例家族，只在这里演示，不会存进你的数据'), 500);
+};
+
+let rtTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(rtTimer);
+  rtTimer = setTimeout(() => { resize(); }, 140);
+});
+
+function boot(){
+  S = load();
+  const ob = document.getElementById('onboard');
+  if(S){
+    ob.style.display = 'none';
+    buildGraph();
+  } else {
+    nodes = []; edges = [];
+    fitBox = { x0: -320, x1: 320, y0: -160, y1: 160 };
+  }
+  resize();
+  requestAnimationFrame(render);
+  updateHud();
+  mountLangBtn();
+  langBoot();
+  if(S) setTimeout(() => toast('点任意一颗星，看它和你是什么关系'), 1500);
+}
+
+boot();
+</script>
+</body>
+</html>
