@@ -489,7 +489,7 @@ function _kinBloodEN(from, to){
 }
 function _spouseTermEN(fromId, partner, toId, bt){
   const f = _isF(toId);
-  if(bt === 'self') return 'spouse';
+  if(bt === 'self') return _isF(fromId) ? 'husband' : 'wife';
   if(/brother|sister/.test(bt)) return f ? 'sister-in-law' : 'brother-in-law';
   if(bt === 'son' || bt === 'daughter') return f ? 'daughter-in-law' : 'son-in-law';
   if(bt === 'father' || bt === 'mother') return f ? 'stepmother' : 'stepfather';
@@ -497,13 +497,16 @@ function _spouseTermEN(fromId, partner, toId, bt){
 }
 function _inLawEN(fromId, spouseId, toId, bt){
   if(bt === 'father' || bt === 'mother') return (bt === 'father' ? 'father' : 'mother') + '-in-law';
-  if(/brother|sister/.test(bt)) return "spouse's " + bt;
+  if(/brother|sister/.test(bt)) return _isF(toId) ? 'sister-in-law' : 'brother-in-law';
   if(bt === 'son' || bt === 'daughter') return bt === 'son' ? 'stepson' : 'stepdaughter';
   return "spouse's " + bt;
 }
 function kinTermEN(fromId, toId){
   if(!fromId || !toId) return '';
   if(fromId === toId) return 'self';
+  /* 已经是配偶，就先说配偶——哪怕同时也是表亲 */
+  if(S.unions.some(u => (u.a === fromId && u.b === toId) || (u.b === fromId && u.a === toId)))
+    return _spouseTermEN(fromId, toId, toId, 'self');
   const blood = _kinBloodEN(fromId, toId);
   if(blood) return blood;
   const tsp = S.unions.filter(u => u.a === toId || u.b === toId).map(u => (u.a === toId ? u.b : u.a));
@@ -1101,6 +1104,7 @@ function liftHex(h, t){
 
 /* ---------- 示例家族 ---------- */
 function seedDemo(){
+  if(LANG === 'en') return seedDemoEN();
   const s = blank();
   s.fams.push({ id:'fA', name:'张家', surname:'张', hue:'gold', color:'#FF6B4A' });
   s.fams.push({ id:'fB', name:'李家', surname:'李', hue:'indigo', color:'#3BC9DB' });
@@ -1164,6 +1168,71 @@ function seedDemo(){
 
   s.me = zhangWei;
   /* 从源头打标：示例图绝不落盘、绝不上云 */
+  s.demo = true;
+  return s;
+}
+
+/* 英文示例：呼啸山庄的恩萧家与林顿家，两代人两次联姻 */
+function seedDemoEN(){
+  const s = blank();
+  s.fams.push({ id:'fA', name:'Earnshaw', surname:'', hue:'gold', color:'#FF6B4A' });
+  s.fams.push({ id:'fB', name:'Linton', surname:'', hue:'indigo', color:'#3BC9DB' });
+
+  const add = (fid,name,sex,b,d,note)=>{
+    const id = uid('p');
+    s.people.push({ id, fid, name, sex, b:b||'', d:d||'', note:note||'', img:'', claim:true, claimAt: Date.now() - 18*86400000, privacy:'blood' });
+    return id;
+  };
+  const union = (a,b,year)=>{
+    const id = uid('u'); s.unions.push({ id, a, b, year:year||'', link:'hard', agree:{} }); return id;
+  };
+  const child = (p,c)=>{ s.pc.push({ p, c, kind:'blood' }); };
+
+  /* 恩萧家 */
+  const mrEarnshaw = add('fA','Mr Earnshaw','m',1740,1802,'Came back from Liverpool with a foundling and called him Heathcliff.');
+  const mrsEarnshaw= add('fA','Mrs Earnshaw','f',1745,1790,'');
+  union(mrEarnshaw, mrsEarnshaw, 1766);
+
+  const hindley = add('fA','Hindley Earnshaw','m',1768,1804,'Gambled the estate away, then drank himself into the ground.');
+  const catherine = add('fA','Catherine Earnshaw','f',1772,1803,'Wild, proud, and never quite at home anywhere.');
+  child(mrEarnshaw, hindley); child(mrsEarnshaw, hindley);
+  child(mrEarnshaw, catherine); child(mrsEarnshaw, catherine);
+
+  const frances = add('fA','Frances','f',1774,1800,'');
+  union(hindley, frances, 1798);
+  const hareton = add('fA','Hareton Earnshaw','m',1802,'','Raised rough, stayed loyal.');
+  child(hindley, hareton); child(frances, hareton);
+
+  /* 林顿家 */
+  const mrLinton = add('fB','Mr Linton','m',1742,1797,'');
+  const mrsLinton= add('fB','Mrs Linton','f',1748,1798,'');
+  union(mrLinton, mrsLinton, 1768);
+
+  const edgar = add('fB','Edgar Linton','m',1774,1830,'Quiet, bookish, patient to a fault.');
+  const isabella = add('fB','Isabella Linton','f',1778,1801,'Ran off south and never came back.');
+  child(mrLinton, edgar); child(mrsLinton, edgar);
+  child(mrLinton, isabella); child(mrsLinton, isabella);
+
+  /* 第一座桥：Catherine × Edgar，两个家族因这场婚姻接壤 */
+  const b1 = union(catherine, edgar, 1800);
+  const u1 = s.unions.find(u => u.id === b1);
+  if(u1){ u1.link = 'soft'; u1.agree = { fA: true }; }
+
+  const cathy = add('fB','Cathy Linton','f',1808,1830,'Married her cousin in the end, and the two houses finally became one.');
+  child(catherine, cathy); child(edgar, cathy);
+
+  /* 第二座桥：下一代再联姻，两个家族的血在第三代混在一起 */
+  const b2 = union(hareton, cathy, 1828);
+  const u2 = s.unions.find(u => u.id === b2);
+  if(u2){ u2.link = 'soft'; u2.agree = { fA: true }; }
+
+  /* 几颗还没被认领的暗星 */
+  [hareton, frances, mrEarnshaw].forEach(id => {
+    const p = s.people.find(x => x.id === id);
+    if(p){ p.claim = false; p.claimAt = 0; p.b = ''; p.note = ''; }
+  });
+
+  s.me = edgar;
   s.demo = true;
   return s;
 }
@@ -1309,6 +1378,9 @@ function _inLaw(fromId, spouseId, toId, bloodTerm){
 function kinTerm(fromId, toId){
   if(!fromId || !toId) return '';
   if(fromId === toId) return '自己';
+  /* 已经是配偶，就先说配偶——哪怕同时也是表亲 */
+  if(S.unions.some(u => (u.a === fromId && u.b === toId) || (u.b === fromId && u.a === toId)))
+    return _isF(fromId) ? '丈夫' : '妻子';
   const blood = _kinBlood(fromId, toId);
   if(blood) return blood;
   const tsp = S.unions.filter(u => u.a === toId || u.b === toId).map(u => (u.a === toId ? u.b : u.a));
