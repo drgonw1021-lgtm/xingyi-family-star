@@ -493,7 +493,8 @@ function _spouseTermEN(fromId, partner, toId, bt){
   if(/brother|sister/.test(bt)) return f ? 'sister-in-law' : 'brother-in-law';
   if(bt === 'son' || bt === 'daughter') return f ? 'daughter-in-law' : 'son-in-law';
   if(bt === 'father' || bt === 'mother') return f ? 'stepmother' : 'stepfather';
-  return 'spouse of ' + bt;
+  if(bt === 'aunt' || bt === 'uncle') return f ? 'aunt by marriage' : 'uncle by marriage';
+  return bt + '-in-law';
 }
 function _inLawEN(fromId, spouseId, toId, bt){
   if(bt === 'father' || bt === 'mother') return (bt === 'father' ? 'father' : 'mother') + '-in-law';
@@ -967,12 +968,14 @@ function dupCandidatesFor(id){
   S.people.forEach(p => {
     if(p.id === id) return;
     const why = [];
-    if(n && normName(p.name) === n) why.push('同名');
+    if(n && normName(p.name) === n) why.push(LANG === 'en' ? 'same name' : '同名');
     const psp = [], ppa = [];
     S.unions.forEach(u => { if(u.a === p.id) psp.push(u.b); if(u.b === p.id) psp.push(u.a); });
     S.pc.forEach(e => { if(e.c === p.id) ppa.push(e.p); });
-    if(psp.some(x => sp[x])) why.push('同一个配偶');
-    if(ppa.some(x => pa[x])) why.push('同一对父母');
+    if(psp.some(x => sp[x])) why.push(LANG === 'en' ? 'same spouse' : '同一个配偶');
+    /* 共享父母通常就是兄弟姐妹，本身不算重复；只有同名时才把它当作线索 */
+    if(ppa.some(x => pa[x]) && n && normName(p.name) === n)
+      why.push(LANG === 'en' ? 'same parents' : '同一对父母');
     if(!why.length) return;
     out.push({ id: p.id, name: p.name || '未命名', why: why.join(' / '), claim: !!p.claim });
   });
@@ -1577,11 +1580,13 @@ function buildGraph(){
        (ps.includes(x.b) && ps.length===1)));
     if(ps.length >= 2 && u && hub[u.id]){
       edges.push({ type:'birth', from:hub[u.id].id, to:cid, p1:u.a, p2:u.b,
-        txt: nm(u.a) + '、' + nm(u.b) + ' → ' + nm(cid) + ' · 亲子' });
+        txt: LANG === 'en'
+          ? nm(u.a) + ', ' + nm(u.b) + ' → ' + nm(cid) + ' · parent-child'
+          : nm(u.a) + '、' + nm(u.b) + ' → ' + nm(cid) + ' · 亲子' });
     } else {
       ps.forEach(pid => {
         if(pos[pid]) edges.push({ type:'birth', from:pid, to:cid, p1:pid, p2:cid,
-          txt: nm(pid) + ' → ' + nm(cid) + ' · 亲子' });
+          txt: nm(pid) + ' → ' + nm(cid) + (LANG === 'en' ? ' · parent-child' : ' · 亲子') });
       });
     }
   });
@@ -1591,7 +1596,9 @@ function buildGraph(){
       const cross = (P(u.a)||{}).fid !== (P(u.b)||{}).fid;
       edges.push({ type: cross ? 'bridge':'pair', from:u.a, to:u.b, hub:hub[u.id],
         p1:u.a, p2:u.b,
-        txt: nm(u.a) + ' — ' + nm(u.b) + (cross ? ' · 两族联姻' : ' · 夫妻') });
+        txt: nm(u.a) + ' — ' + nm(u.b) + (LANG === 'en'
+          ? (cross ? ' · cross-family marriage' : ' · married')
+          : (cross ? ' · 两族联姻' : ' · 夫妻')) });
     }
   });
 
@@ -2261,7 +2268,7 @@ function showCard(node){
   const pv = p.privacy || 'blood';
   const masked = guestView && pv !== 'family';
   const years = (masked && pv === 'self') ? '不对外公开' : ((p.b || p.d) ? ((p.b || '?') + ' — ' + (p.d || (LANG === 'en' ? 'present' : '今'))) : '生卒未补');
-  const initial = p.name ? p.name.slice(-1) : '?';
+  const initial = p.name ? (LANG === 'en' ? p.name.trim().charAt(0).toUpperCase() : p.name.trim().charAt(0)) : '?';
   const filled = [p.b, p.d, p.note].filter(Boolean).length;
   const dups = dupCandidatesFor(p.id);
   const dupBlock = dups.length ? (
