@@ -1,0 +1,13 @@
+# build / test scratch
+_*.py
+_*.js
+_*.log
+_*.txt
+_*.json
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
